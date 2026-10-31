@@ -6,10 +6,16 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -23,10 +29,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -44,132 +57,601 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import kotlin.math.roundToInt
 
 @Composable
 fun EqualizerSheet(app: AppState, onDismiss: () -> Unit) {
     val eq = app.eq
     val u = LocalUi.current
     val bandNames = listOf("60 Hz", "230 Hz", "910 Hz", "3.6 kHz", "14 kHz")
+    val bandDesc = listOf("Bass", "Low Mid", "Mid", "High Mid", "Treble")
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+    ) {
         Box(
             Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.65f))
-                .statusBarsPadding()
-                .navigationBarsPadding(),
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss
+                )
+                .systemBarsPadding(),
             contentAlignment = Alignment.BottomCenter
         ) {
             Column(
                 Modifier
                     .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .fillMaxHeight(0.92f)
                     .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     .background(if (u.light) Color(0xFFF7F5FC) else Color(0xFF161522))
-                    .padding(20.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {}
+                    .padding(top = 10.dp, bottom = 16.dp, start = 18.dp, end = 18.dp)
             ) {
+                // Top drag pill
+                Box(
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .size(width = 38.dp, height = 4.dp)
+                        .clip(CircleShape)
+                        .background(u.dim.copy(alpha = 0.35f))
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                // Header with Title, hardware indicator and Close Button
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
-                        Text("Audio Equalizer", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = u.text)
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "Audio Equalizer",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = u.text
+                            )
+                            if (eq.enabled) {
+                                Spacer(Modifier.width(8.dp))
+                                Box(
+                                    Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(u.accent.copy(alpha = 0.18f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        "ON",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = u.accentText
+                                    )
+                                }
+                            }
+                        }
                         Text(
-                            if (eq.isSupported) "Hardware audio effects active" else "Audio effects not supported on this device",
-                            fontSize = 12.sp,
+                            if (eq.isSupported) "Hardware DSP Audio Effects Engine" else "Hardware effects not supported on device",
+                            fontSize = 11.sp,
                             color = if (eq.isSupported) u.dim else Color(0xFFFF6B6B)
                         )
                     }
-                    Switch(
-                        checked = eq.enabled,
-                        onCheckedChange = { eq.setEnabledState(it) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = u.accent, checkedThumbColor = u.onAccent)
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(
+                            checked = eq.enabled,
+                            onCheckedChange = { eq.setEnabledState(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = u.accent,
+                                checkedThumbColor = u.onAccent
+                            )
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconBtn(path = P.Close, desc = "Close", onClick = onDismiss, sz = 20.dp)
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                // Scrollable Body - weight(1f) ensures it fits viewport and scrolls smoothly on any screen height!
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Presets Horizontal Row
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Sound Presets",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = u.text
+                            )
+                            Text(
+                                eq.presets.getOrElse(eq.presetIndex) { "Custom" },
+                                fontSize = 12.sp,
+                                color = u.accentText,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(horizontal = 2.dp)
+                        ) {
+                            itemsIndexed(eq.presets) { index, name ->
+                                val isSelected = eq.presetIndex == index
+                                Box(
+                                    Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(if (isSelected) u.accent else u.glassHi)
+                                        .border(
+                                            1.dp,
+                                            if (isSelected) u.accent else u.border,
+                                            RoundedCornerShape(20.dp)
+                                        )
+                                        .clickable(enabled = eq.enabled) {
+                                            eq.setPreset(index)
+                                        }
+                                        .padding(horizontal = 14.dp, vertical = 7.dp)
+                                ) {
+                                    Text(
+                                        name,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) u.onAccent else if (eq.enabled) u.text else u.dim
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Visual EQ Response Curve Canvas
+                    val levels = eq.bandLevels
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(u.glassLo)
+                            .border(1.dp, u.border, RoundedCornerShape(16.dp))
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                    ) {
+                        Canvas(Modifier.fillMaxSize()) {
+                            val w = size.width
+                            val h = size.height
+                            val midY = h / 2f
+
+                            // Center 0dB reference line
+                            drawLine(
+                                color = Color.Gray.copy(alpha = 0.25f),
+                                start = Offset(0f, midY),
+                                end = Offset(w, midY),
+                                strokeWidth = 1.dp.toPx()
+                            )
+
+                            if (levels.isNotEmpty()) {
+                                val stepX = w / (levels.size - 1).coerceAtLeast(1)
+                                val points = levels.mapIndexed { idx, lvl ->
+                                    val normY = midY - (lvl / 10f) * (midY * 0.80f)
+                                    Offset(idx * stepX, normY)
+                                }
+
+                                val path = Path().apply {
+                                    moveTo(points[0].x, points[0].y)
+                                    for (i in 0 until points.size - 1) {
+                                        val p0 = points[i]
+                                        val p1 = points[i + 1]
+                                        val controlX = (p0.x + p1.x) / 2f
+                                        cubicTo(controlX, p0.y, controlX, p1.y, p1.x, p1.y)
+                                    }
+                                }
+
+                                // Fill under curve
+                                val fillPath = Path().apply {
+                                    addPath(path)
+                                    lineTo(w, h)
+                                    lineTo(0f, h)
+                                    close()
+                                }
+                                drawPath(
+                                    path = fillPath,
+                                    brush = Brush.verticalGradient(
+                                        listOf(
+                                            u.accent.copy(alpha = if (eq.enabled) 0.35f else 0.1f),
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+
+                                // Stroke curve line
+                                drawPath(
+                                    path = path,
+                                    color = if (eq.enabled) u.accent else u.dim,
+                                    style = Stroke(width = 2.5.dp.toPx())
+                                )
+
+                                // Draw control node dots
+                                points.forEach { pt ->
+                                    drawCircle(
+                                        color = if (eq.enabled) u.accent else u.dim,
+                                        radius = 4.dp.toPx(),
+                                        center = pt
+                                    )
+                                    drawCircle(
+                                        color = Color.White,
+                                        radius = 2.dp.toPx(),
+                                        center = pt
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // 5-Band Vertical Equalizer Section
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(u.glassHi)
+                            .border(1.dp, u.border, RoundedCornerShape(20.dp))
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Equalizer Bands (-10 dB to +10 dB)",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = u.text
+                            )
+                            TextButton(
+                                onClick = { eq.setPreset(0) },
+                                enabled = eq.enabled,
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(28.dp)
+                            ) {
+                                Text("Reset Flat", fontSize = 11.sp, color = u.accentText, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        // 5 Sliders Row
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(160.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            for (i in 0 until 5) {
+                                val currentLevel = levels.getOrElse(i) { 0 }
+                                VerticalEqSlider(
+                                    level = currentLevel,
+                                    onLevelChange = { newLevel ->
+                                        eq.setBand(i, newLevel)
+                                    },
+                                    frequency = bandNames.getOrElse(i) { "" },
+                                    category = bandDesc.getOrElse(i) { "" },
+                                    enabled = eq.enabled,
+                                    accent = u.accent,
+                                    textColor = u.text,
+                                    dimColor = u.dim,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+
+                    // Bass Boost & Virtualizer 3D Audio Cards
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Bass Boost Card
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(u.glassHi)
+                                .border(1.dp, u.border, RoundedCornerShape(18.dp))
+                                .padding(12.dp)
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Bass Boost", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = u.text)
+                                Text(
+                                    "${eq.bassStrength / 10}%",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (eq.bassStrength > 0) u.accentText else u.dim
+                                )
+                            }
+                            Text(
+                                "Deep low-end punch",
+                                fontSize = 10.sp,
+                                color = u.dim
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Slider(
+                                value = eq.bassStrength.toFloat(),
+                                onValueChange = { eq.setBass(it.toInt()) },
+                                valueRange = 0f..1000f,
+                                enabled = eq.enabled,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = u.accent,
+                                    activeTrackColor = u.accent,
+                                    inactiveTrackColor = u.border
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            // Quick buttons
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                listOf(0 to "Off", 500 to "50%", 1000 to "Max").forEach { (v, lbl) ->
+                                    val sel = (eq.bassStrength == v) || (v == 500 && eq.bassStrength in 400..600)
+                                    Box(
+                                        Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (sel) u.accent.copy(alpha = 0.2f) else Color.Transparent)
+                                            .clickable(enabled = eq.enabled) { eq.setBass(v) }
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            lbl,
+                                            fontSize = 10.sp,
+                                            color = if (sel) u.accentText else u.dim,
+                                            fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Virtualizer 3D Card
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(u.glassHi)
+                                .border(1.dp, u.border, RoundedCornerShape(18.dp))
+                                .padding(12.dp)
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Virtualizer", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = u.text)
+                                Text(
+                                    "${eq.virtualizerStrength / 10}%",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (eq.virtualizerStrength > 0) u.accentText else u.dim
+                                )
+                            }
+                            Text(
+                                "3D spatial soundstage",
+                                fontSize = 10.sp,
+                                color = u.dim
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Slider(
+                                value = eq.virtualizerStrength.toFloat(),
+                                onValueChange = { eq.setVirtualizer(it.toInt()) },
+                                valueRange = 0f..1000f,
+                                enabled = eq.enabled,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = u.accent,
+                                    activeTrackColor = u.accent,
+                                    inactiveTrackColor = u.border
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            // Quick buttons
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                listOf(0 to "Off", 500 to "50%", 1000 to "3D").forEach { (v, lbl) ->
+                                    val sel = (eq.virtualizerStrength == v) || (v == 500 && eq.virtualizerStrength in 400..600)
+                                    Box(
+                                        Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (sel) u.accent.copy(alpha = 0.2f) else Color.Transparent)
+                                            .clickable(enabled = eq.enabled) { eq.setVirtualizer(v) }
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            lbl,
+                                            fontSize = 10.sp,
+                                            color = if (sel) u.accentText else u.dim,
+                                            fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                // Bottom Action Button: Done
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = u.accent,
+                        contentColor = u.onAccent
+                    )
+                ) {
+                    Text("Apply & Close", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Interactive vertical equalizer slider with touch and drag gestures,
+ * center 0dB tick indicator, and glowing thumb knob.
+ */
+@Composable
+fun VerticalEqSlider(
+    level: Int,
+    onLevelChange: (Int) -> Unit,
+    frequency: String,
+    category: String,
+    enabled: Boolean,
+    accent: Color,
+    textColor: Color,
+    dimColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        // dB display badge on top
+        Text(
+            text = if (level > 0) "+$level" else "$level",
+            fontSize = 11.sp,
+            fontWeight = if (level != 0) FontWeight.Bold else FontWeight.Normal,
+            color = if (level != 0 && enabled) accent else dimColor
+        )
+
+        // Interactive vertical track area
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .pointerInput(enabled) {
+                    if (!enabled) return@pointerInput
+                    detectTapGestures { offset ->
+                        val h = size.height.toFloat()
+                        if (h > 0) {
+                            val norm = 1f - (offset.y / h).coerceIn(0f, 1f)
+                            val newLevel = (-10 + norm * 20).roundToInt().coerceIn(-10, 10)
+                            onLevelChange(newLevel)
+                        }
+                    }
+                }
+                .pointerInput(enabled) {
+                    if (!enabled) return@pointerInput
+                    detectDragGestures { change, _ ->
+                        change.consume()
+                        val h = size.height.toFloat()
+                        if (h > 0) {
+                            val norm = 1f - (change.position.y / h).coerceIn(0f, 1f)
+                            val newLevel = (-10 + norm * 20).roundToInt().coerceIn(-10, 10)
+                            onLevelChange(newLevel)
+                        }
+                    }
+                }
+                .semantics {
+                    contentDescription = "$frequency band: $level dB"
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(Modifier.fillMaxSize()) {
+                val w = size.width
+                val h = size.height
+                val midY = h / 2f
+                val trackWidth = 6.dp.toPx()
+                val centerX = w / 2f
+
+                // Track Background
+                drawRoundRect(
+                    color = Color.Gray.copy(alpha = 0.2f),
+                    topLeft = Offset(centerX - trackWidth / 2f, 0f),
+                    size = androidx.compose.ui.geometry.Size(trackWidth, h),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(trackWidth / 2f)
+                )
+
+                // 0dB Center horizontal tick
+                drawLine(
+                    color = Color.Gray.copy(alpha = 0.45f),
+                    start = Offset(centerX - 8.dp.toPx(), midY),
+                    end = Offset(centerX + 8.dp.toPx(), midY),
+                    strokeWidth = 1.5.dp.toPx()
+                )
+
+                // Thumb Y calculation (level: -10 to +10)
+                val thumbY = midY - (level / 10f) * (midY - 10.dp.toPx())
+
+                // Active track from midY to thumbY
+                val fillTop = minOf(midY, thumbY)
+                val fillHeight = kotlin.math.abs(thumbY - midY)
+                if (fillHeight > 0) {
+                    drawRoundRect(
+                        color = if (enabled) accent else dimColor,
+                        topLeft = Offset(centerX - trackWidth / 2f, fillTop),
+                        size = androidx.compose.ui.geometry.Size(trackWidth, fillHeight),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(trackWidth / 2f)
                     )
                 }
 
-                // Presets Dropdown
-                var presetMenu by remember { mutableStateOf(false) }
-                Box {
-                    OutlinedButton(
-                        onClick = { presetMenu = true },
-                        enabled = eq.enabled,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Preset: ${eq.presets.getOrElse(eq.presetIndex) { "Custom" }}", color = if (eq.enabled) u.text else u.dim)
-                    }
-                    DropdownMenu(presetMenu, { presetMenu = false }) {
-                        eq.presets.forEachIndexed { i, name ->
-                            DropdownMenuItem(text = { Text(name) }, onClick = {
-                                presetMenu = false
-                                eq.setPreset(i)
-                            })
-                        }
-                    }
-                }
-
-                // 5 Frequency sliders
-                Text("Frequency Bands", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = u.text)
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    val levels = eq.bandLevels
-                    for (i in 0 until 5) {
-                        val level = levels.getOrElse(i) { 0 }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("${if (level > 0) "+$level" else "$level"} dB", fontSize = 10.sp, color = u.dim)
-                            Slider(
-                                value = level.toFloat(),
-                                onValueChange = { eq.setBand(i, it.toInt()) },
-                                valueRange = -10f..10f,
-                                steps = 19,
-                                enabled = eq.enabled,
-                                modifier = Modifier
-                                    .height(130.dp)
-                                    .width(44.dp),
-                                colors = SliderDefaults.colors(thumbColor = u.accent, activeTrackColor = u.accent)
-                            )
-                            Text(bandNames.getOrElse(i) { "" }, fontSize = 10.sp, color = u.text, fontWeight = FontWeight.Medium)
-                        }
-                    }
-                }
-
-                // Bass Boost & Virtualizer
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Bass Boost: ${eq.bassStrength / 10}%", fontSize = 13.sp, color = u.text, fontWeight = FontWeight.Medium)
-                        Slider(
-                            value = eq.bassStrength.toFloat(),
-                            onValueChange = { eq.setBass(it.toInt()) },
-                            valueRange = 0f..1000f,
-                            enabled = eq.enabled,
-                            colors = SliderDefaults.colors(thumbColor = u.accent, activeTrackColor = u.accent)
-                        )
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text("Virtualizer: ${eq.virtualizerStrength / 10}%", fontSize = 13.sp, color = u.text, fontWeight = FontWeight.Medium)
-                        Slider(
-                            value = eq.virtualizerStrength.toFloat(),
-                            onValueChange = { eq.setVirtualizer(it.toInt()) },
-                            valueRange = 0f..1000f,
-                            enabled = eq.enabled,
-                            colors = SliderDefaults.colors(thumbColor = u.accent, activeTrackColor = u.accent)
-                        )
-                    }
-                }
-
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = u.accent, contentColor = u.onAccent)
-                ) {
-                    Text("Done", fontWeight = FontWeight.Bold)
-                }
+                // Thumb Knob
+                val thumbRadius = 9.dp.toPx()
+                drawCircle(
+                    color = (if (enabled) accent else dimColor).copy(alpha = 0.25f),
+                    radius = thumbRadius + 3.dp.toPx(),
+                    center = Offset(centerX, thumbY)
+                )
+                drawCircle(
+                    color = if (enabled) accent else dimColor,
+                    radius = thumbRadius,
+                    center = Offset(centerX, thumbY)
+                )
+                drawCircle(
+                    color = Color.White,
+                    radius = 3.5.dp.toPx(),
+                    center = Offset(centerX, thumbY)
+                )
             }
+        }
+
+        // Frequency Label & Category
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = frequency,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColor
+            )
+            Text(
+                text = category,
+                fontSize = 9.sp,
+                color = dimColor
+            )
         }
     }
 }

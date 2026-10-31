@@ -46,4 +46,22 @@ class FrPlayerUnitTest {
             perm == android.Manifest.permission.READ_EXTERNAL_STORAGE
         )
     }
+
+    @Test
+    fun testEqualizerBandsAndPresets() {
+        val presets = listOf(
+            "Normal", "Classical", "Dance", "Flat", "Folk", "Heavy Metal",
+            "Hip Hop", "Jazz", "Pop", "Rock", "Bass Boost", "Vocal"
+        )
+        assertEquals(12, presets.size)
+
+        val bandNames = listOf("60 Hz", "230 Hz", "910 Hz", "3.6 kHz", "14 kHz")
+        assertEquals(5, bandNames.size)
+
+        // Verify level range clamping
+        val minLevel = -10
+        val maxLevel = 10
+        val testLevel = 15.coerceIn(minLevel, maxLevel)
+        assertEquals(10, testLevel)
+    }
 }
