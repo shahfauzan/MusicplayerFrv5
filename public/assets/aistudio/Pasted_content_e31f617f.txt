@@ -1,0 +1,500 @@
+FR MUSIC PLAYER — COMPLETE MASTER DEVELOPMENT PROMPT
+
+ROLE
+
+Act as a senior Android developer, performance engineer, audio software specialist, and premium mobile UI/UX designer.
+
+I have an existing Android music player application called FR Music Player. I want you to transform it into a fast, modern, polished, feature-rich music player while preserving all existing working functionality.
+
+The existing app already has basic music playback, album artwork, artist and title filtering, recently added or newest tracks, and five UI customization options.
+
+IMPORTANT: This is an improvement of an existing project, not a request to build a completely new app.
+
+Inspect the current codebase and architecture before changing anything. Identify the actual causes of performance and UI problems, then implement improvements in a maintainable way.
+
+PHASE 1 — FIX THE EXISTING PROBLEMS
+
+These requirements are mandatory and take priority over optional enhancements.
+
+1. Optimize App Performance
+
+The app currently feels slow. Investigate and fix the underlying causes.
+
+- Reduce app launch time and unnecessary screen-transition delays.
+- Improve music library scanning, loading, searching, sorting, and filtering.
+- Use background processing or Kotlin coroutines where appropriate.
+- Avoid blocking the main/UI thread.
+- Optimize album-art and thumbnail loading, caching, and image decoding.
+- Use lazy rendering for large music lists.
+- Prevent unnecessary database queries, repeated calculations, and redundant UI recompositions.
+- Avoid memory leaks and excessive background processing.
+- Maintain smooth scrolling while music is playing.
+- Keep playback responsive during navigation and theme changes.
+- Avoid unnecessary network access for local music functionality.
+- Measure performance before and after where practical.
+
+Do not sacrifice functionality or playback stability just to make the app appear faster.
+
+2. Profile Photo Selection and Editing
+
+When a user selects a profile photo, provide a proper image editor before saving.
+
+Required features:
+
+- Select an image from the device gallery.
+- Preview the selected image.
+- Move the image horizontally and vertically.
+- Zoom in and out using pinch gestures.
+- Adjust the crop and positioning.
+- Provide Reset, Cancel, and Apply/Save controls.
+- Support portrait, square, and landscape source images.
+- Display the final crop correctly inside the profile avatar.
+- Preserve the saved image and crop settings after restarting the app.
+- Prevent stretched, distorted, or unexpectedly zoomed images.
+- Make the editor usable on different Android screen sizes.
+
+Use the image-cropping approach best suited to the existing project.
+
+3. Remove the Ugly Black Button Press Effect
+
+When I tap buttons, an unwanted black shade or overlay appears, making the interface look ugly.
+
+Investigate its actual source, such as ripple configuration, pressed-state backgrounds, elevation overlays, or theme colors.
+
+Requirements:
+
+- Remove the unwanted black overlay.
+- Provide subtle, modern, theme-aware touch feedback.
+- Use a suitable colored ripple, subtle opacity change, or small scale animation.
+- Apply consistent behavior to buttons, icon buttons, cards, navigation items, and other interactive elements.
+- Support both light and dark themes.
+- Keep selected, disabled, focused, and pressed states distinguishable.
+- Preserve accessibility and appropriate touch feedback.
+
+Do not simply disable all interaction feedback globally.
+
+4. Improve the Five Existing UI Customization Options
+
+My app already has five UI customization options. Preserve and improve all five.
+
+- Give each option a clear name and a useful preview.
+- Make the five options visually distinct.
+- Clearly indicate the currently selected option.
+- Apply the chosen appearance consistently throughout the app.
+- Maintain readable text, icons, backgrounds, and controls.
+- Persist the selected style across app restarts.
+- Apply theme changes smoothly without unnecessary screen reloads.
+- Prevent flickering or interruption of music playback.
+- Ensure all five options work with the profile screen, music library, player screen, and settings.
+
+Do not remove or replace existing themes without explaining a genuine technical reason.
+
+5. Responsive Layout and Screen-Space Optimization
+
+Make the interface look correct on different Android devices and aspect ratios.
+
+- Remove excessive empty space on tall screens.
+- Avoid pushing the main content too far down.
+- Adapt spacing and layout to the available screen dimensions.
+- Prevent overlapping controls and clipped text.
+- Respect system bars, display cutouts, and navigation insets.
+- Keep the mini-player compact and functional.
+- Make the full player use available space effectively.
+- Ensure controls remain accessible on smaller screens.
+- Support portrait layouts and other configurations already supported by the app.
+
+PHASE 2 — IMPLEMENT 20 NEW FEATURES
+
+Integrate the following features into the existing app. Reuse existing components and architecture wherever practical.
+
+6. Premium Now Playing Screen
+
+Create an attractive full-screen music player featuring:
+
+- Large album artwork.
+- Song title, artist, and album details.
+- Play/pause, previous, and next controls.
+- A smooth seek bar and accurate playback progress.
+- Shuffle and repeat controls.
+- Queue access.
+- Favorite button.
+- Smooth, lightweight transitions.
+- Responsive layouts for different screen sizes.
+
+Make the screen feel premium without excessive animations or unnecessary visual clutter.
+
+7. Smart Playlists
+
+Allow users to:
+
+- Create custom playlists.
+- Rename and delete playlists.
+- Add and remove tracks.
+- Reorder songs.
+- Play an entire playlist.
+- Add a song to a playlist from different screens.
+- Preserve playlists after restarting the app.
+
+8. Lyrics Display
+
+Provide a lyrics interface that supports:
+
+- Embedded lyrics when available.
+- Synchronized lyrics when a compatible source is available.
+- Manual lyrics entry or editing where appropriate.
+- Clear typography and a readable scrolling layout.
+- A graceful unavailable-lyrics state.
+
+Do not invent lyrics or introduce an external service without explaining its requirements.
+
+9. Audio Equalizer
+
+Implement an equalizer using the existing audio architecture where possible.
+
+- Frequency-band adjustment.
+- Bass and treble controls where supported.
+- Useful presets where supported.
+- Enable/disable control.
+- Settings persistence.
+- Clear feedback when the device or audio engine does not support a requested effect.
+
+Avoid conflicting audio sessions, duplicate effects, or unnecessary battery usage.
+
+10. Sleep Timer
+
+Allow users to:
+
+- Choose a countdown duration.
+- Stop playback after the current song.
+- Cancel or reset a timer.
+- See the remaining time.
+- Keep timer behavior reliable while the screen is off.
+
+Use lifecycle-safe scheduling and avoid unnecessarily persistent background tasks.
+
+11. Advanced Queue Management
+
+Provide an interactive playback queue.
+
+- View upcoming tracks.
+- Play a selected track next.
+- Reorder upcoming songs.
+- Remove individual tracks.
+- Clear the queue.
+- Distinguish the currently playing song.
+- Keep the queue synchronized with actual playback.
+
+12. Dynamic Album-Art Theme
+
+Optionally derive player accent colors from the currently playing song's artwork.
+
+- Generate a suitable color palette from album art.
+- Maintain readable text and controls.
+- Transition between colors smoothly.
+- Handle missing or monochrome artwork.
+- Allow users to disable dynamic colors.
+- Respect the selected app theme.
+
+13. Listening History and Statistics
+
+Provide useful local listening information.
+
+- Recently played tracks.
+- Most-played songs.
+- Frequently played artists.
+- Listening-time statistics where reliably measurable.
+- A clear history-management option.
+- Persistent local records where appropriate.
+
+Avoid unnecessary tracking. Do not collect or transmit personal listening information without explicit consent.
+
+14. Live Audio Visualizer
+
+Add an optional audio visualization mode.
+
+- Spectrum bars, waveform-style visuals, or a comparable lightweight effect.
+- Responsive rendering.
+- Theme-aware appearance.
+- An option to enable or disable visualization.
+- Low battery and CPU overhead.
+
+Use actual audio data when supported. Do not display fabricated reactive output as if it represents the real signal.
+
+15. Folder-Based Music Browsing
+
+Allow users to browse local audio files by folder.
+
+- Show available music folders.
+- Navigate folder contents.
+- Play supported audio files.
+- Offer a way to exclude unwanted folders.
+- Handle Android storage permissions correctly.
+- Avoid repeated full-device scans.
+- Preserve existing library browsing functionality.
+
+16. Favorites System
+
+Provide a dedicated favorites collection.
+
+- Mark and unmark tracks as favorites.
+- View all favorite tracks.
+- Play favorites as a collection.
+- Keep favorite status synchronized across the app.
+- Persist favorites after restarting.
+
+17. Advanced Music Search
+
+Implement fast local search across available metadata.
+
+- Song title.
+- Artist.
+- Album.
+- Folder.
+- Other useful metadata when available.
+- Search-as-you-type with appropriate debouncing.
+- Clear search controls.
+- Useful empty-result states.
+- Sorting and filtering without freezing the interface.
+
+Preserve the existing artist and title filtering behavior.
+
+18. Playback Speed Control
+
+Provide configurable playback speed for supported audio formats and audio engines.
+
+- Sensible speed options.
+- A clearly displayed current speed.
+- Reset to normal speed.
+- Preserve speed according to a deliberate, user-friendly preference.
+- Maintain accurate seek and playback behavior.
+
+Do not promise support for every format if the current audio engine cannot provide it.
+
+19. Enhanced Lock-Screen and Notification Controls
+
+Ensure reliable Android media controls.
+
+- Play/pause.
+- Previous/next track.
+- Track title and artist.
+- Album artwork where supported.
+- Playback progress where supported.
+- Consistent notification and lock-screen state.
+- Correct behavior when the user changes tracks or exits the app.
+
+Respect Android background-execution rules and media-session requirements.
+
+20. Gapless Playback and Crossfade
+
+Where supported by the audio engine:
+
+- Provide gapless transitions between compatible tracks.
+- Allow users to configure crossfade duration.
+- Allow crossfade to be disabled.
+- Prevent overlapping playback states and audio-session conflicts.
+- Preserve seek accuracy and queue behavior.
+
+If a reliable implementation requires replacing the audio engine, explain the trade-offs before making a major architectural change.
+
+21. Edit Song Information
+
+Allow users to edit supported metadata, such as:
+
+- Song title.
+- Artist.
+- Album.
+- Embedded artwork where supported.
+
+Requirements:
+
+- Request appropriate Android permissions.
+- Validate user input.
+- Handle read-only files and unsupported formats.
+- Keep the library display synchronized after edits.
+- Do not silently overwrite original files when an operation fails.
+
+22. Android Home-Screen Widget
+
+Add a resizable or appropriately sized home-screen widget if supported by the project.
+
+- Display the current song and artwork.
+- Provide play/pause controls.
+- Provide previous/next controls where appropriate.
+- Update the displayed track reliably.
+- Keep the widget lightweight.
+- Ensure widget controls interact with the actual playback service.
+
+23. Backup and Restore
+
+Provide a way to back up and restore supported user data.
+
+Include appropriate items such as:
+
+- Playlists.
+- Favorites.
+- Theme and personalization settings.
+- Other app-owned preferences.
+- Listening history if the user chooses to include it.
+
+Use a documented, validated backup format. Do not assume that local music files can be copied or restored without the necessary storage permissions. Handle missing or moved tracks gracefully.
+
+24. Private Music Section
+
+Provide an optional private section for selected tracks.
+
+- Let users hide selected tracks from the main library.
+- Offer a clear way to manage hidden tracks.
+- Protect access using Android device authentication or an appropriate supported mechanism.
+- Avoid exposing private track details unnecessarily in the private section's UI.
+- Make the limitations clear.
+
+Do not falsely claim that hiding a track encrypts or secures the underlying audio file.
+
+25. Deep UI Customization
+
+In addition to the five existing UI styles, offer useful optional personalization.
+
+- Accent colors.
+- Player layout choices.
+- Artwork corner shapes.
+- Animation preferences.
+- Control visibility.
+- Optional compact or spacious layouts.
+- Consistent colors across supported screens.
+- Persistent user preferences.
+
+Keep customization organized and easy to understand. Avoid overwhelming users with too many controls.
+
+PHASE 3 — ARCHITECTURE AND INTEGRATION RULES
+
+26. Preserve Existing Functionality
+
+Before making changes, identify and preserve all existing working features, including:
+
+- Music playback and pause/resume.
+- Previous and next track.
+- Seek bar and playback progress.
+- Album artwork and thumbnails.
+- Artist and title filtering.
+- Newest or recently added tracks.
+- Existing profile settings.
+- All five UI customization options.
+- Background playback, notification controls, and media-session behavior where already implemented.
+
+Do not replace real functionality with mock data, static screens, or placeholder controls.
+
+27. Technical Requirements
+
+- Detect whether the project uses Kotlin, Java, Jetpack Compose, XML layouts, or another established architecture.
+- Retain the existing technology stack unless a clear technical reason requires a change.
+- Inspect the existing playback engine before implementing audio effects or crossfade.
+- Use appropriate Android lifecycle management.
+- Use efficient database and local-storage operations.
+- Request only necessary permissions.
+- Follow the Android version and SDK constraints already configured in the project.
+- Minimize new dependencies.
+- Keep components modular, maintainable, and testable.
+- Avoid hardcoded colors that break theme consistency.
+- Persist user settings and app-owned data reliably.
+- Handle missing artwork, unavailable lyrics, empty libraries, inaccessible files, and interrupted playback gracefully.
+- Do not introduce unnecessary internet connectivity into a local music player.
+
+PHASE 4 — UI/UX QUALITY STANDARD
+
+The finished app should feel coherent, premium, and easy to use.
+
+Design principles:
+
+1. Consistent spacing, typography, icons, and visual hierarchy.
+2. Smooth but lightweight animations.
+3. Theme-aware interactive feedback.
+4. No ugly black pressed-state overlays.
+5. No excessive empty space.
+6. No oversized controls that waste screen space.
+7. No unnecessary pop-ups or permission requests.
+8. Clear loading, empty, success, and error states.
+9. Accessible contrast and comfortable touch targets.
+10. No unnecessary complexity on the main screen.
+
+Do not redesign every screen independently. Create a consistent visual system that works across the entire app.
+
+PHASE 5 — IMPLEMENTATION AND TESTING
+
+Follow this workflow.
+
+Step 1: Audit
+
+Inspect the complete project structure, build configuration, dependencies, navigation, playback implementation, data storage, theme system, and relevant UI components.
+
+Identify the likely causes of slowness and the source of the black button overlay.
+
+Step 2: Establish a baseline
+
+Check whether the existing project builds. Identify existing failures before editing. Record measurable performance observations where practical.
+
+Step 3: Fix mandatory problems
+
+Implement performance improvements, the profile photo editor, correct button feedback, responsive layouts, and improvements to all five existing themes.
+
+Step 4: Implement the new features
+
+Implement the 20 optional feature areas in a sensible order. Prioritize features that reuse the current architecture and provide the greatest user value.
+
+Do not introduce all 20 at the expense of stability. If a feature needs major architectural work, external services, unavailable device capabilities, or substantial additional dependencies, explain that before proceeding.
+
+Step 5: Test
+
+Test the following:
+
+- App launch and navigation.
+- Large music libraries and smooth scrolling.
+- Playback during screen changes.
+- Background playback and notification controls.
+- Profile photo selection, positioning, zooming, cropping, and persistence.
+- All five existing themes.
+- Pressed states across themes.
+- Responsive layouts and different screen sizes.
+- Playlist, favorite, queue, and search persistence.
+- Timer behavior.
+- Supported audio effects and transitions.
+- Permission handling and unavailable-feature states.
+- Backup/restore validation.
+- Any new widget, privacy, or metadata functionality that is implemented.
+
+Step 6: Verify the build
+
+Run the existing project's appropriate build and test commands.
+
+Fix compilation errors and relevant test failures. Do not claim that the app builds, tests pass, or features work unless you have actually verified them.
+
+Step 7: Report results
+
+At completion, provide:
+
+- A concise summary of the improvements.
+- A list of files changed.
+- The features actually implemented.
+- Build and test results.
+- Any dependencies or permissions added.
+- Known limitations and remaining work.
+- Instructions for building and installing the updated APK.
+
+FINAL INSTRUCTIONS
+
+Work directly in my existing FR Music Player project.
+
+Do not merely give me a design proposal or sample snippets. Inspect the code and implement the changes in the actual project wherever your tools allow.
+
+Do not delete working functionality, rewrite the whole project unnecessarily, or create fake feature screens.
+
+Priority order:
+
+1. Fix performance and slowness.
+2. Implement the profile photo editor with size, zoom, and position controls.
+3. Remove the ugly black button shade while preserving good touch feedback.
+4. Improve the five existing UI customization options.
+5. Fix responsive layout and wasted screen space.
+6. Add the 20 new features in a technically sound, maintainable order.
+7. Test, build, and report honestly.
+
+The final result should be a reliable, fast, polished, and feature-rich FR Music Player that feels like a professionally developed Android application.

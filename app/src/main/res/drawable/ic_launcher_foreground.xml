@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- FR Letters -->
+    <path android:fillColor="#FFFFFF" android:pathData="M31,26h22v6h-16v9h14v6h-14v17h-6z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M59,26h6v38h-6z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M65,26h7a9.5,9.5 0 0 1 0,19h-7v-5.5h7a4,4 0 0 0 0,-8h-7z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M69,44l9,20h-6.5l-9,-20z"/>
+    <!-- Equalizer Spectrum Bars in Vibrant Cyan -->
+    <path android:fillColor="#29D8FF" android:pathData="M31,78h4v6h-4z"/>
+    <path android:fillColor="#29D8FF" android:pathData="M40,73h4v11h-4z"/>
+    <path android:fillColor="#29D8FF" android:pathData="M49,69h4v15h-4z"/>
+    <path android:fillColor="#29D8FF" android:pathData="M58,75h4v9h-4z"/>
+    <path android:fillColor="#29D8FF" android:pathData="M67,71h4v13h-4z"/>
+    <path android:fillColor="#29D8FF" android:pathData="M75,77h4v7h-4z"/>
+</vector>
