@@ -102,7 +102,15 @@ fun WaveSeek(
 }
 
 @Composable
-fun RotatingHaloArt(model: Any?, seed: String, artSize: androidx.compose.ui.unit.Dp, playing: Boolean, motion: Int, scale: Float) {
+fun RotatingHaloArt(
+    model: Any?,
+    seed: String,
+    artSize: androidx.compose.ui.unit.Dp,
+    playing: Boolean,
+    motion: Int,
+    scale: Float,
+    beatGlow: Float = 0f
+) {
     val u = LocalUi.current
     var angle by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(playing, motion) {
@@ -124,20 +132,22 @@ fun RotatingHaloArt(model: Any?, seed: String, artSize: androidx.compose.ui.unit
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val r = artSize.toPx() / 2f + 9.dp.toPx()
+            val extraRadius = r * (1.32f + beatGlow * 0.35f)
+            val glowAlpha = (0.38f + beatGlow * 0.45f).coerceIn(0f, 0.95f)
             drawCircle(
                 androidx.compose.ui.graphics.Brush.radialGradient(
-                    listOf(ring.copy(alpha = 0.38f), Color.Transparent),
+                    listOf(ring.copy(alpha = glowAlpha), Color.Transparent),
                     center = center,
-                    radius = r * 1.32f
+                    radius = extraRadius
                 ),
-                radius = r * 1.32f,
+                radius = extraRadius,
                 center = center
             )
             drawCircle(
-                ring.copy(alpha = 0.30f),
-                radius = r,
+                ring.copy(alpha = (0.30f + beatGlow * 0.4f).coerceIn(0f, 0.95f)),
+                radius = r + (beatGlow * 5.dp.toPx()),
                 center = center,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 6.dp.toPx())
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = (6.dp.toPx() + beatGlow * 4.dp.toPx()))
             )
             drawCircle(
                 ring.copy(alpha = 0.95f),
@@ -175,6 +185,13 @@ fun NowPlaying(
     val song = songId?.let { app.byId[it] }
 
     var showMenu by remember { mutableStateOf(false) }
+    var showBeatSyncSheet by remember { mutableStateOf(false) }
+
+    val beatShake = rememberBeatShake(
+        playing = ps.playing,
+        mode = app.prefs.beatShakeMode,
+        hapticsEnabled = app.prefs.beatShakeHaptics
+    )
 
     BoxWithConstraints(
         Modifier
@@ -192,6 +209,11 @@ fun NowPlaying(
                 .fillMaxHeight()
                 .widthIn(max = 560.dp)
                 .fillMaxWidth()
+                .graphicsLayer {
+                    translationX = beatShake.offsetX
+                    translationY = beatShake.offsetY
+                    rotationZ = beatShake.rotation
+                }
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -215,6 +237,7 @@ fun NowPlaying(
                         GlassCircleBtn(P.More, "Song options", { showMenu = true })
                         DropdownMenu(showMenu, { showMenu = false }) {
                             DropdownMenuItem(text = { Text("Equalizer") }, onClick = { showMenu = false; onEqualizer() })
+                            DropdownMenuItem(text = { Text("⚡ Beat Shake Settings") }, onClick = { showMenu = false; showBeatSyncSheet = true })
                             DropdownMenuItem(text = { Text("Lyrics") }, onClick = { showMenu = false; onLyrics() })
                             if (song != null) {
                                 DropdownMenuItem(text = { Text("Edit info (Tags)") }, onClick = { showMenu = false; onTagEdit(song) })
@@ -232,16 +255,25 @@ fun NowPlaying(
 
             Spacer(Modifier.height(14.dp))
 
-            // Cover Art
+            // Cover Art with dynamic bass thump scale and glow
+            val effectiveScale = scale * beatShake.scale
             Crossfade(item, animationSpec = tween(fadeMs), label = "npArt") { cur ->
                 if (LocalArtShape.current == 2) {
-                    RotatingHaloArt(cur.mediaMetadata.artworkUri, cur.mediaMetadata.title?.toString() ?: "", artSize, ps.playing, m, scale)
+                    RotatingHaloArt(
+                        cur.mediaMetadata.artworkUri,
+                        cur.mediaMetadata.title?.toString() ?: "",
+                        artSize,
+                        ps.playing,
+                        m,
+                        effectiveScale,
+                        beatShake.glowAlpha
+                    )
                 } else {
                     val shape = artShape(24.dp)
                     Box(
                         Modifier
-                            .graphicsLayer { scaleX = scale; scaleY = scale }
-                            .shadow(24.dp, shape, ambientColor = u.accent, spotColor = u.accent)
+                            .graphicsLayer { scaleX = effectiveScale; scaleY = effectiveScale }
+                            .shadow(24.dp + (14.dp * beatShake.glowAlpha), shape, ambientColor = u.accent, spotColor = u.accent)
                     ) {
                         Art(cur.mediaMetadata.artworkUri, cur.mediaMetadata.title?.toString() ?: "", artSize, 24.dp, shape = shape)
                     }
@@ -385,7 +417,7 @@ fun NowPlaying(
 
             Spacer(Modifier.height(14.dp))
 
-            // Action Quick Chips (Queue, Equalizer, Lyrics, Sleep, Speed)
+            // Action Quick Chips (Queue, Equalizer, Beat Shake, Lyrics, Sleep, Speed)
             FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -393,6 +425,13 @@ fun NowPlaying(
             ) {
                 Chip("Queue (${ps.queue.size})", onClick = onQueue)
                 Chip("Equalizer", onClick = onEqualizer)
+                val shakeChipLabel = when (app.prefs.beatShakeMode) {
+                    0 -> "Shake: Off"
+                    1 -> "🍃 Shake: Subtle"
+                    2 -> "⚡ Shake: Dynamic"
+                    else -> "🔥 Shake: Party"
+                }
+                Chip(shakeChipLabel, onClick = { showBeatSyncSheet = true })
                 Chip("Lyrics", onClick = onLyrics)
                 Chip(sleepLabel, onClick = onSleep)
                 Chip("${speeds[app.prefs.speed]}x") {
@@ -401,6 +440,10 @@ fun NowPlaying(
             }
 
             Spacer(Modifier.height(18.dp))
+        }
+
+        if (showBeatSyncSheet) {
+            BeatSyncSheet(app = app, onDismiss = { showBeatSyncSheet = false })
         }
     }
 }

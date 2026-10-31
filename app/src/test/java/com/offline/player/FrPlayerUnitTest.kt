@@ -64,4 +64,23 @@ class FrPlayerUnitTest {
         val testLevel = 15.coerceIn(minLevel, maxLevel)
         assertEquals(10, testLevel)
     }
+
+    @Test
+    fun testBeatShakeModes() {
+        assertEquals(4, BeatShakeModes.size)
+        assertEquals("Off", BeatShakeModes[0].name)
+        assertEquals("Subtle", BeatShakeModes[1].name)
+        assertEquals("Dynamic", BeatShakeModes[2].name)
+        assertEquals("Party Mode", BeatShakeModes[3].name)
+    }
+
+    @Test
+    fun testBeatShakeStateDefaults() {
+        val defaultState = BeatShakeState()
+        assertEquals(0f, defaultState.offsetX, 0.001f)
+        assertEquals(0f, defaultState.offsetY, 0.001f)
+        assertEquals(0f, defaultState.rotation, 0.001f)
+        assertEquals(1f, defaultState.scale, 0.001f)
+        assertEquals(0f, defaultState.glowAlpha, 0.001f)
+    }
 }

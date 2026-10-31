@@ -1002,6 +1002,22 @@ fun SettingsScreen(
             }
         }
 
+        // Beat Sync & Screen Shake
+        SettingCard("Beat Sync & Screen Shake") {
+            Text("Shake the screen and pulse album artwork in sync with music bass drops & kicks.", fontSize = 12.sp, color = u.dim)
+            Text("Shake Intensity", fontSize = 13.sp, color = u.dim)
+            FlowRow(horizontalArrangement = gap) {
+                BeatShakeModes.forEach { mode ->
+                    Chip("${mode.emoji} ${mode.name}", prefs.beatShakeMode == mode.id) {
+                        prefs.setBeatShake(mode.id)
+                    }
+                }
+            }
+            SwitchRow("Beat Haptics", "Subtle tactile vibration on heavy bass hits and kicks.", prefs.beatShakeHaptics) {
+                prefs.setBeatHaptics(it)
+            }
+        }
+
         // Custom Background Image
         SettingCard("Custom Wallpaper") {
             FlowRow(horizontalArrangement = gap) {

@@ -34,6 +34,8 @@ class Prefs(ctx: Context) {
     var seekStyle by mutableIntStateOf(p.getInt("seekstyle", 0)); private set // 0 Waveform, 1 Slider
     var crossfadeSec by mutableIntStateOf(p.getInt("crossfade", 0)); private set // 0 (off), 2, 4, 6, 8
     var visualizerOn by mutableStateOf(p.getBoolean("vis_on", true)); private set
+    var beatShakeMode by mutableIntStateOf(p.getInt("beat_shake", 2)); private set // 0 Off, 1 Subtle, 2 Dynamic, 3 Wild/Party
+    var beatShakeHaptics by mutableStateOf(p.getBoolean("beat_haptics", false)); private set
     var userName by mutableStateOf(p.getString("username", "") ?: ""); private set
     var avatarRev by mutableIntStateOf(if (avatarFile.exists()) 1 else 0); private set
     var wallpaperRev by mutableIntStateOf(if (wallpaperFile.exists()) 1 else 0); private set
@@ -61,6 +63,8 @@ class Prefs(ctx: Context) {
     @JvmName("applySeekStyle") fun setSeekStyle(v: Int) { seekStyle = v; p.edit().putInt("seekstyle", v).apply() }
     @JvmName("applyCrossfade") fun setCrossfade(v: Int) { crossfadeSec = v; p.edit().putInt("crossfade", v).apply() }
     @JvmName("applyVisualizer") fun setVisualizer(v: Boolean) { visualizerOn = v; p.edit().putBoolean("vis_on", v).apply() }
+    @JvmName("applyBeatShake") fun setBeatShake(v: Int) { beatShakeMode = v.coerceIn(0, 3); p.edit().putInt("beat_shake", beatShakeMode).apply() }
+    @JvmName("applyBeatHaptics") fun setBeatHaptics(v: Boolean) { beatShakeHaptics = v; p.edit().putBoolean("beat_haptics", v).apply() }
     @JvmName("applyUserName") fun setUserName(v: String) { userName = v.trim(); p.edit().putString("username", userName).apply() }
 
     fun toggleFolderExclude(folder: String) {
@@ -81,10 +85,11 @@ class Prefs(ctx: Context) {
 
     fun resetDefaults() {
         p.edit().remove("mode").remove("theme").remove("sort").remove("speed").remove("blur")
-            .remove("dynamic").remove("motion").remove("artshape").remove("seekstyle").remove("crossfade").apply()
+            .remove("dynamic").remove("motion").remove("artshape").remove("seekstyle").remove("crossfade")
+            .remove("beat_shake").remove("beat_haptics").apply()
         clearWallpaper()
         mode = 0; accent = 5; sort = 0; speed = 2; blur = true; dynamic = true; motion = systemMotion()
-        artShape = 2; seekStyle = 0; crossfadeSec = 0; visualizerOn = true
+        artShape = 2; seekStyle = 0; crossfadeSec = 0; visualizerOn = true; beatShakeMode = 2; beatShakeHaptics = false
     }
 
     fun saveSession(ids: String, idx: Int, pos: Long) {
