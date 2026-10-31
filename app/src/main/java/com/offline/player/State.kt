@@ -36,14 +36,22 @@ class PlayerState {
     }
 
     fun toggle() {
+        if (PlaybackService.isOnlineActive) {
+            OnlineStreamManager.toggle()
+            return
+        }
         controller?.let {
             if (it.isPlaying) it.pause() else it.play()
         }
     }
 
     fun playSongs(list: List<Song>, start: Int, shuffleOn: Boolean? = null) {
+        if (PlaybackService.isOnlineActive) {
+            OnlineStreamManager.stop()
+        }
         val c = controller ?: return
         if (list.isEmpty()) return
+        c.volume = 1f
         shuffleOn?.let { c.shuffleModeEnabled = it }
         c.setMediaItems(list.map { it.toItem() }, start.coerceIn(0, list.lastIndex), 0L)
         c.prepare()

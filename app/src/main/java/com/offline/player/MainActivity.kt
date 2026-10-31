@@ -31,6 +31,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -202,10 +203,15 @@ fun PlayerApp() {
         }
     }
 
-    // Bind Equalizer when playback session ID changes
-    LaunchedEffect(ps.playing) {
-        if (PlaybackService.activeSessionId > 0) {
-            app.eq.bind(PlaybackService.activeSessionId)
+    // Bind Equalizer & Visualizer when playback session ID changes
+    DisposableEffect(PlaybackService.activeSessionId, ps.playing) {
+        val sid = PlaybackService.activeSessionId
+        if (sid > 0) {
+            app.eq.bind(sid)
+            AudioVisualizerManager.bind(sid, ps.playing)
+        }
+        onDispose {
+            AudioVisualizerManager.release()
         }
     }
 
@@ -366,52 +372,72 @@ fun PlayerApp() {
                 Column(Modifier.fillMaxSize().statusBarsPadding()) {
                     Box(Modifier.weight(1f)) {
                         val d = detail
+                        // Keep OnlineScreen alive in composition so YouTube/Spotify WebView is never destroyed or paused on tab switch!
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .then(
+                                    if (tab == 3 && d == null) Modifier
+                                    else Modifier.size(1.dp).alpha(0.0001f).offset(x = 10000.dp)
+                                )
+                        ) {
+                            OnlineScreen(app)
+                        }
+
                         if (d != null) {
                             DetailScreen(app, d) { detail = null }
-                        } else when (tab) {
-                            0 -> HomeScreen(
-                                app = app,
-                                chip = homeChip,
-                                onChip = { homeChip = it },
-                                loaded = loaded,
-                                granted = granted,
-                                onRequest = { launcher.launch(perms) },
-                                onSettings = openAppSettings,
-                                onOpen = { detail = it },
-                                onSearch = { tab = 1; searchOn = true; musicChip = 0 },
-                                onLiked = { tab = 1; musicChip = 6 },
-                                onHistory = { showHistory = true },
-                                onEqualizer = { showEqualizer = true },
-                                onProfile = { tab = 2 }
-                            )
-                            1 -> MyMusicScreen(
-                                app = app,
-                                results = results,
-                                query = query,
-                                onQuery = { query = it },
-                                chip = musicChip,
-                                onChip = { musicChip = it },
-                                searchOn = searchOn,
-                                onSearchToggle = { searchOn = !searchOn; if (!searchOn) query = "" },
-                                loaded = loaded,
-                                granted = granted,
-                                onRequest = { launcher.launch(perms) },
-                                onSettings = openAppSettings,
-                                onBack = { tab = 0 },
-                                onLiked = { musicChip = if (musicChip == 6) 0 else 6 },
-                                onOpen = { detail = it }
-                            )
-                            3 -> OnlineScreen(app)
-                            else -> SettingsScreen(
-                                app = app,
-                                onRescan = { if (granted) reload() },
-                                onHistory = { showHistory = true },
-                                onEqualizer = { showEqualizer = true }
-                            )
+                        } else if (tab != 3) {
+                            when (tab) {
+                                0 -> HomeScreen(
+                                    app = app,
+                                    chip = homeChip,
+                                    onChip = { homeChip = it },
+                                    loaded = loaded,
+                                    granted = granted,
+                                    onRequest = { launcher.launch(perms) },
+                                    onSettings = openAppSettings,
+                                    onOpen = { detail = it },
+                                    onSearch = { tab = 1; searchOn = true; musicChip = 0 },
+                                    onLiked = { tab = 1; musicChip = 6 },
+                                    onHistory = { showHistory = true },
+                                    onEqualizer = { showEqualizer = true },
+                                    onProfile = { tab = 2 }
+                                )
+                                1 -> MyMusicScreen(
+                                    app = app,
+                                    results = results,
+                                    query = query,
+                                    onQuery = { query = it },
+                                    chip = musicChip,
+                                    onChip = { musicChip = it },
+                                    searchOn = searchOn,
+                                    onSearchToggle = { searchOn = !searchOn; if (!searchOn) query = "" },
+                                    loaded = loaded,
+                                    granted = granted,
+                                    onRequest = { launcher.launch(perms) },
+                                    onSettings = openAppSettings,
+                                    onBack = { tab = 0 },
+                                    onLiked = { musicChip = if (musicChip == 6) 0 else 6 },
+                                    onOpen = { detail = it }
+                                )
+                                else -> SettingsScreen(
+                                    app = app,
+                                    onRescan = { if (granted) reload() },
+                                    onHistory = { showHistory = true },
+                                    onEqualizer = { showEqualizer = true }
+                                )
+                            }
                         }
                     }
 
-                    MiniPlayer(app) { showNow = true }
+                    MiniPlayer(app) {
+                        if (PlaybackService.isOnlineActive) {
+                            tab = 3
+                            detail = null
+                        } else {
+                            showNow = true
+                        }
+                    }
                     Box(Modifier.navigationBarsPadding()) {
                         FloatNav(tab) { tab = it; detail = null }
                     }

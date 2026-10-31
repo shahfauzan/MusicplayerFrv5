@@ -97,52 +97,8 @@ fun rememberBeatShake(
     val ctx = LocalContext.current
     val sessionId = PlaybackService.activeSessionId
 
-    // Raw energy input: 0.0f .. 1.0f
-    var rawEnergy by remember { mutableFloatStateOf(0f) }
-    var isKickDrop by remember { mutableStateOf(false) }
-
-    // Hardware Audio Visualizer listener for real bass energy
-    DisposableEffect(sessionId, playing) {
-        var visualizer: Visualizer? = null
-        if (playing && sessionId > 0) {
-            try {
-                val range = Visualizer.getCaptureSizeRange()
-                val cap = if (range != null && range.isNotEmpty()) range[0].coerceAtLeast(64) else 64
-                visualizer = Visualizer(sessionId).apply {
-                    captureSize = cap
-                    setDataCaptureListener(
-                        object : Visualizer.OnDataCaptureListener {
-                            private var lastEnergy = 0f
-                            override fun onWaveFormDataCapture(v: Visualizer, data: ByteArray, rate: Int) {
-                                if (data.isEmpty()) return
-                                var sumSq = 0.0
-                                for (b in data) {
-                                    val d = abs(b.toInt() - 128)
-                                    sumSq += (d * d)
-                                }
-                                val rms = (sqrt(sumSq / data.size) / 128.0).toFloat().coerceIn(0f, 1f)
-                                val smoothed = lastEnergy * 0.4f + rms * 0.6f
-                                lastEnergy = smoothed
-                                rawEnergy = (smoothed * 1.6f).coerceIn(0f, 1f)
-                                isKickDrop = (smoothed > 0.42f && smoothed > lastEnergy)
-                            }
-                            override fun onFftDataCapture(v: Visualizer, fft: ByteArray, rate: Int) {}
-                        },
-                        Visualizer.getMaxCaptureRate() / 2, true, false
-                    )
-                    enabled = true
-                }
-            } catch (e: Exception) {
-                visualizer = null
-            }
-        }
-        onDispose {
-            try {
-                visualizer?.enabled = false
-                visualizer?.release()
-            } catch (e: Exception) {}
-        }
-    }
+    val rawEnergy = if (playing) AudioVisualizerManager.energy else 0f
+    val isKickDrop = if (playing) AudioVisualizerManager.isKickDrop else false
 
     // Dynamic animation phase for rhythm and directional shake
     val beatPhase = remember { Animatable(0f) }

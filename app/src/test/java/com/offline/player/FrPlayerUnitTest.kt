@@ -83,4 +83,34 @@ class FrPlayerUnitTest {
         assertEquals(1f, defaultState.scale, 0.001f)
         assertEquals(0f, defaultState.glowAlpha, 0.001f)
     }
+
+    @Test
+    fun testParseYouTubeLinks() {
+        val ytWatch = parseOnlineLink("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        assertTrue(ytWatch != null)
+        assertEquals("YouTube", ytWatch?.platform)
+        assertTrue(ytWatch?.embed?.contains("dQw4w9WgXcQ") == true)
+        assertTrue(ytWatch?.embed?.contains("enablejsapi=1") == true)
+
+        val ytShort = parseOnlineLink("https://youtu.be/dQw4w9WgXcQ")
+        assertTrue(ytShort != null)
+        assertEquals("YouTube", ytShort?.platform)
+        assertTrue(ytShort?.embed?.contains("dQw4w9WgXcQ") == true)
+    }
+
+    @Test
+    fun testParseSpotifyLinks() {
+        val spotifyTrack = parseOnlineLink("https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT")
+        assertTrue(spotifyTrack != null)
+        assertEquals("Spotify", spotifyTrack?.platform)
+        assertTrue(spotifyTrack?.embed?.contains("4cOdK2wGLETKBW3PvgPWqT") == true)
+    }
+
+    @Test
+    fun testAudioVisualizerManagerSafety() {
+        // Must safely bind/release without throwing exceptions
+        AudioVisualizerManager.release()
+        assertEquals(0f, AudioVisualizerManager.energy, 0.001f)
+        assertEquals(36, AudioVisualizerManager.waveBytes.size)
+    }
 }

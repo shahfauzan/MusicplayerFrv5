@@ -29,45 +29,7 @@ fun LiveVisualizer(
     barCount: Int = 36,
     modifier: Modifier = Modifier
 ) {
-    val sessionId = PlaybackService.activeSessionId
-    val rawBytes = remember { mutableStateOf(ByteArray(barCount)) }
-
-    DisposableEffect(sessionId, playing) {
-        var visualizer: Visualizer? = null
-        if (playing && sessionId > 0) {
-            try {
-                val range = Visualizer.getCaptureSizeRange()
-                val cap = if (range != null && range.isNotEmpty()) range[0].coerceAtLeast(64) else 64
-                visualizer = Visualizer(sessionId).apply {
-                    captureSize = cap
-                    setDataCaptureListener(
-                        object : Visualizer.OnDataCaptureListener {
-                            override fun onWaveFormDataCapture(v: Visualizer, data: ByteArray, samplingRate: Int) {
-                                val b = ByteArray(barCount)
-                                val step = (data.size / barCount).coerceAtLeast(1)
-                                for (i in 0 until barCount) {
-                                    val idx = (i * step).coerceIn(0, data.lastIndex)
-                                    b[i] = data[idx]
-                                }
-                                rawBytes.value = b
-                            }
-                            override fun onFftDataCapture(v: Visualizer, fft: ByteArray, rate: Int) {}
-                        },
-                        Visualizer.getMaxCaptureRate() / 2, true, false
-                    )
-                    enabled = true
-                }
-            } catch (e: Exception) {
-                visualizer = null
-            }
-        }
-        onDispose {
-            try {
-                visualizer?.enabled = false
-                visualizer?.release()
-            } catch (e: Exception) {}
-        }
-    }
+    val currentBytes = if (playing) AudioVisualizerManager.waveBytes else ByteArray(barCount)
 
     val phase = remember { Animatable(0f) }
     LaunchedEffect(playing) {
@@ -82,8 +44,6 @@ fun LiveVisualizer(
             phase.snapTo(0f)
         }
     }
-
-    val currentBytes = rawBytes.value
     Canvas(modifier.fillMaxWidth().height(height)) {
         val w = size.width
         val h = size.height

@@ -37,6 +37,7 @@ class Prefs(ctx: Context) {
     var beatShakeMode by mutableIntStateOf(p.getInt("beat_shake", 2)); private set // 0 Off, 1 Subtle, 2 Dynamic, 3 Wild/Party
     var beatShakeHaptics by mutableStateOf(p.getBoolean("beat_haptics", false)); private set
     var userName by mutableStateOf(p.getString("username", "") ?: ""); private set
+    var lastOnlineUrl by mutableStateOf(p.getString("online_url", "") ?: ""); private set
     var avatarRev by mutableIntStateOf(if (avatarFile.exists()) 1 else 0); private set
     var wallpaperRev by mutableIntStateOf(if (wallpaperFile.exists()) 1 else 0); private set
 
@@ -66,6 +67,7 @@ class Prefs(ctx: Context) {
     @JvmName("applyBeatShake") fun setBeatShake(v: Int) { beatShakeMode = v.coerceIn(0, 3); p.edit().putInt("beat_shake", beatShakeMode).apply() }
     @JvmName("applyBeatHaptics") fun setBeatHaptics(v: Boolean) { beatShakeHaptics = v; p.edit().putBoolean("beat_haptics", v).apply() }
     @JvmName("applyUserName") fun setUserName(v: String) { userName = v.trim(); p.edit().putString("username", userName).apply() }
+    @JvmName("applyLastOnlineUrl") fun setLastOnlineUrl(v: String) { lastOnlineUrl = v.trim(); p.edit().putString("online_url", lastOnlineUrl).apply() }
 
     fun toggleFolderExclude(folder: String) {
         val updated = if (folder in excludedFolders) excludedFolders - folder else excludedFolders + folder
