@@ -430,7 +430,7 @@ fun PlayerApp() {
                         }
                     }
 
-                    MiniPlayer(app) {
+                    BottomMediaControlBar(app) {
                         if (PlaybackService.isOnlineActive) {
                             tab = 3
                             detail = null

@@ -450,40 +450,7 @@ fun NowPlaying(
 
 @Composable
 fun MiniPlayer(app: AppState, onOpen: () -> Unit) {
-    val ps = app.ps
-    val u = LocalUi.current
-    val item = ps.current ?: return
-    val title = item.mediaMetadata.title?.toString() ?: "FR Music Player"
-
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp)
-            .glass(22.dp)
-    ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .themeClickable(onClickLabel = "Open Now Playing", onClick = onOpen)
-                .padding(start = 10.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Art(item.mediaMetadata.artworkUri, title, 44.dp, 10.dp)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold, color = u.text)
-                Text(item.mediaMetadata.artist?.toString() ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, color = u.dim)
-            }
-            IconBtn(if (ps.playing) P.Pause else P.Play, if (ps.playing) "Pause" else "Play", { ps.toggle() }, tint = u.accentText, sz = 28.dp)
-            IconBtn(P.Next, "Next song", { ps.controller?.seekToNext() }, tint = u.text)
-        }
-        LinearProgressIndicator(
-            progress = { if (ps.dur > 0) (ps.pos.toFloat() / ps.dur).coerceIn(0f, 1f) else 0f },
-            modifier = Modifier.fillMaxWidth().height(2.dp),
-            color = u.accent,
-            trackColor = Color.Transparent
-        )
-    }
+    BottomMediaControlBar(app = app, onOpen = onOpen)
 }
 
 @Composable

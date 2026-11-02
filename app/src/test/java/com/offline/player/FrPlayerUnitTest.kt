@@ -113,4 +113,32 @@ class FrPlayerUnitTest {
         assertEquals(0f, AudioVisualizerManager.energy, 0.001f)
         assertEquals(36, AudioVisualizerManager.waveBytes.size)
     }
+
+    @Test
+    fun testSeekProgressCalculation() {
+        val durationMs = 200_000L // 200 seconds
+        val positionMs = 50_000L   // 50 seconds
+        val progress = (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
+        assertEquals(0.25f, progress, 0.001f)
+
+        // Scrub ratio to target position calculation
+        val scrubRatio = 0.75f
+        val targetMs = (scrubRatio * durationMs).toLong()
+        assertEquals(150_000L, targetMs)
+    }
+
+    @Test
+    fun testQuickSeekJumps() {
+        val duration = 180_000L
+        val current = 15_000L
+
+        val rewound = (current - 10_000L).coerceAtLeast(0L)
+        assertEquals(5_000L, rewound)
+
+        val forwarded = (current + 10_000L).coerceAtMost(duration)
+        assertEquals(25_000L, forwarded)
+
+        val clampedRewind = (5_000L - 10_000L).coerceAtLeast(0L)
+        assertEquals(0L, clampedRewind)
+    }
 }

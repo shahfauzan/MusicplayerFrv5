@@ -68,21 +68,30 @@ private val ytHosts = setOf(
 fun parseOnlineLink(raw: String): OnlineLink? {
     val s = raw.trim()
     if (s.isEmpty()) return null
-    val uri = try {
-        Uri.parse(if (s.startsWith("http://") || s.startsWith("https://")) s else "https://$s")
-    } catch (e: Exception) {
-        return null
+    val fullUrl = if (s.startsWith("http://") || s.startsWith("https://")) s else "https://$s"
+
+    // Parse using standard Java URI so it works seamlessly in both Android runtime and JVM unit tests
+    val javaUri = try { java.net.URI(fullUrl) } catch (e: Exception) { null }
+    val host = javaUri?.host?.lowercase() ?: try {
+        Uri.parse(fullUrl).host?.lowercase()
+    } catch (e: Exception) { null } ?: return null
+
+    val path = javaUri?.path ?: ""
+    val query = javaUri?.query ?: ""
+    val segs = path.split('/').filter { it.isNotEmpty() }
+
+    fun getQueryParam(name: String): String? {
+        val pattern = Regex("(?:[?&])$name=([^&]+)")
+        return pattern.find("?$query")?.groupValues?.getOrNull(1)
     }
-    val host = uri.host?.lowercase() ?: return null
-    val segs = uri.pathSegments
 
     if (host in ytHosts) {
         val id = when {
             host == "youtu.be" -> segs.firstOrNull()
             segs.firstOrNull() in setOf("shorts", "embed", "live") -> segs.getOrNull(1)
-            else -> uri.getQueryParameter("v")
+            else -> getQueryParam("v")
         }
-        val pl = uri.getQueryParameter("list")
+        val pl = getQueryParam("list")
         return when {
             id != null && Regex("[A-Za-z0-9_-]{11}").matches(id) -> {
                 val embedUrl = "https://www.youtube.com/embed/$id?autoplay=1&playsinline=1&enablejsapi=1&rel=0" +
@@ -290,7 +299,6 @@ fun PersistentOnlineEmbedView(
                     mediaPlaybackRequiresUserGesture = false
                     loadWithOverviewMode = true
                     useWideViewPort = true
-                    databaseEnabled = true
                     mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 }
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
