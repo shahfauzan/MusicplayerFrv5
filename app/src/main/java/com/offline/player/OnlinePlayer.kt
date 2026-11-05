@@ -256,23 +256,28 @@ object OnlineStreamManager {
         val wv = activeWebView ?: return
         val js = """
             (function() {
+                try {
+                    Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });
+                    Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; }, configurable: true });
+                } catch(e) {}
                 var v = document.querySelector('video') || document.querySelector('audio');
                 if (v) {
-                    if (${play}) { v.play(); } else { v.pause(); }
-                    return;
+                    if (${play}) { v.play().catch(function(){}); } else { v.pause(); }
+                }
+                var iframes = document.querySelectorAll('iframe');
+                for (var i = 0; i < iframes.length; i++) {
+                    var f = iframes[i];
+                    if (f && f.contentWindow) {
+                        f.contentWindow.postMessage(JSON.stringify({
+                            event: 'command',
+                            func: '${if (play) "playVideo" else "pauseVideo"}',
+                            args: ''
+                        }), '*');
+                    }
                 }
                 var btn = document.querySelector('button[data-testid="play-pause-button"]');
                 if (btn) {
                     btn.click();
-                    return;
-                }
-                var f = document.querySelector('iframe');
-                if (f && f.contentWindow) {
-                    f.contentWindow.postMessage(JSON.stringify({
-                        event: 'command',
-                        func: '${if (play) "playVideo" else "pauseVideo"}',
-                        args: ''
-                    }), '*');
                 }
             })();
         """.trimIndent()
@@ -300,12 +305,26 @@ fun PersistentOnlineEmbedView(
                     loadWithOverviewMode = true
                     useWideViewPort = true
                     mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
                 }
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                         val h = request.url.host ?: return true
                         return allowed.none { h.endsWith(it) }
+                    }
+
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        view?.evaluateJavascript("""
+                            (function() {
+                                try {
+                                    Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });
+                                    Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; }, configurable: true });
+                                    document.addEventListener('visibilitychange', function(e) { e.stopImmediatePropagation(); }, true);
+                                } catch(e) {}
+                            })();
+                        """.trimIndent(), null)
                     }
                 }
                 OnlineStreamManager.activeWebView = this

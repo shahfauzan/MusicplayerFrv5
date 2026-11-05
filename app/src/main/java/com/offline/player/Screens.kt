@@ -47,15 +47,15 @@ import kotlinx.coroutines.withContext
 const val GOLD_PLAYS = 20
 private const val RECENT_COUNT = 30
 
-private class HomeCard(
+class HomeCard(
     val key: String, val title: String, val subtitle: String,
     val art: Any?, val gold: Boolean, val open: () -> Unit
 )
 
-private val homeChips = listOf("All", "Trending", "Recent", "New Artist", "New Releases")
+private val homeChips = listOf("All", "Quick picks", "Trending", "Albums", "Playlists", "Artists", "Energize", "Relax")
 
 @Composable
-private fun dialogColor(): Color = if (LocalUi.current.light) Color.White else Color(0xFF1E1E2A)
+private fun dialogColor(): Color = if (LocalUi.current.light) Color.White else Color(0xFF18191E)
 
 @Composable
 fun ConfirmDialog(title: String, text: String, confirm: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
@@ -278,7 +278,346 @@ fun Message(text: String, action: (@Composable () -> Unit)? = null) {
     }
 }
 
-// ───────────────────────── Home Screen ─────────────────────────
+// ───────────────────────── YouTube Music Style Home Feed ─────────────────────────
+
+@Composable
+fun YtSectionHeader(
+    overline: String,
+    title: String,
+    actionText: String? = null,
+    onAction: (() -> Unit)? = null
+) {
+    val u = LocalUi.current
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(Modifier.weight(1f, fill = false)) {
+            if (overline.isNotBlank()) {
+                Text(
+                    overline.uppercase(),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = u.dim,
+                    letterSpacing = 1.sp
+                )
+            }
+            Text(
+                title,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = u.text
+            )
+        }
+        if (actionText != null && onAction != null) {
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Brush.verticalGradient(listOf(u.glassHi, u.glassLo)))
+                    .border(1.dp, u.border, RoundedCornerShape(20.dp))
+                    .themeClickable(onClick = onAction)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(actionText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = u.text)
+            }
+        }
+    }
+}
+
+@Composable
+fun YtQuickPicksShelf(
+    app: AppState,
+    songs: List<Song>
+) {
+    val u = LocalUi.current
+    val ps = app.ps
+    val chunks = remember(songs) { songs.take(20).chunked(4) }
+    if (chunks.isEmpty()) return
+
+    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        YtSectionHeader(
+            overline = "START RADIO FOR A SONG",
+            title = "Quick picks",
+            actionText = "Play all",
+            onAction = { if (songs.isNotEmpty()) ps.playSongs(songs, 0) }
+        )
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(chunks) { colSongs ->
+                Column(
+                    Modifier.width(310.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    colSongs.forEach { s ->
+                        val isPlaying = ps.current?.mediaId == s.id.toString()
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .then(
+                                    if (isPlaying) Modifier.background(u.accent.copy(alpha = 0.15f))
+                                    else Modifier
+                                )
+                                .themeClickable(onClickLabel = "Play ${s.title}") {
+                                    val idx = songs.indexOf(s).coerceAtLeast(0)
+                                    ps.playSongs(songs, idx)
+                                }
+                                .padding(vertical = 4.dp, horizontal = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(6.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Art(s.art, s.title, 48.dp, 6.dp)
+                                if (isPlaying) {
+                                    Box(
+                                        Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Black.copy(0.45f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Ico(if (ps.playing) P.Equalizer else P.Play, u.accent, 22.dp)
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.width(12.dp))
+
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    s.title,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isPlaying) u.accentText else u.text,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    "${s.artist} · ${fmt(s.durationMs)}",
+                                    fontSize = 12.sp,
+                                    color = u.dim,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            SongMenu(app, s)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun YtMediumCardsShelf(
+    title: String,
+    overline: String,
+    cards: List<HomeCard>,
+    onAction: (() -> Unit)? = null,
+    actionText: String? = null
+) {
+    val u = LocalUi.current
+    if (cards.isEmpty()) return
+
+    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+        YtSectionHeader(overline = overline, title = title, actionText = actionText, onAction = onAction)
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            items(cards, key = { it.key }) { c ->
+                Column(
+                    Modifier
+                        .width(148.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .themeClickable(onClickLabel = "Open ${c.title}", onClick = c.open)
+                ) {
+                    Box(
+                        Modifier
+                            .size(148.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                    ) {
+                        ArtFill(c.art, c.title, Modifier.fillMaxSize())
+
+                        // YouTube Music signature floating circular play button
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(8.dp)
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(0.72f))
+                                .border(1.dp, Color.White.copy(0.3f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Ico(P.Play, Color.White, 18.dp)
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        c.title,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = u.text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        c.subtitle,
+                        fontSize = 12.sp,
+                        color = u.dim,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun YtArtistCircleShelf(
+    artists: List<Pair<String, List<Song>>>,
+    onOpen: (Detail) -> Unit
+) {
+    val u = LocalUi.current
+    if (artists.isEmpty()) return
+
+    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+        YtSectionHeader(overline = "EXPLORE", title = "Artists you might like")
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            items(artists) { (name, songs) ->
+                Column(
+                    Modifier
+                        .width(105.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .themeClickable(onClick = { onOpen(Detail.Artist(name)) }),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        Modifier
+                            .size(100.dp)
+                            .clip(CircleShape)
+                            .border(1.dp, u.border, CircleShape)
+                    ) {
+                        Art(songs.firstOrNull()?.art, name, 100.dp, 50.dp)
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        name,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = u.text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Text(
+                        "${songs.size} tracks",
+                        fontSize = 11.sp,
+                        color = u.dim,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun YtRankedChartShelf(
+    app: AppState,
+    topSongs: List<Song>
+) {
+    val u = LocalUi.current
+    val ps = app.ps
+    val items = remember(topSongs) { topSongs.take(8) }
+    if (items.isEmpty()) return
+
+    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+        YtSectionHeader(
+            overline = "CHARTS",
+            title = "Top Charts",
+            actionText = "Play chart",
+            onAction = { ps.playSongs(items, 0) }
+        )
+
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items.forEachIndexed { idx, s ->
+                val isPlaying = ps.current?.mediaId == s.id.toString()
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isPlaying) u.accent.copy(0.14f) else u.glassLo)
+                        .border(1.dp, if (isPlaying) u.accent else u.border, RoundedCornerShape(12.dp))
+                        .themeClickable { ps.playSongs(items, idx) }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "${idx + 1}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (idx < 3) u.text else u.dim,
+                        modifier = Modifier.width(32.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+
+                    Art(s.art, s.title, 46.dp, 8.dp)
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            s.title,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isPlaying) u.accentText else u.text,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "${s.artist} · ${fmt(s.durationMs)}",
+                            fontSize = 12.sp,
+                            color = u.dim,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    SongMenu(app, s)
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun HomeScreen(
@@ -300,63 +639,95 @@ fun HomeScreen(
     val ps = app.ps
     val plays = app.history.plays
 
-    val cards = remember(chip, app.songs, app.pls.lists, plays) {
-        fun total(l: List<Song>) = l.sumOf { plays[it.id] ?: 0 }
-        fun songCards(list: List<Song>) = list.mapIndexed { i, s ->
-            HomeCard("s${s.id}", s.title, s.artist, s.art, false) { ps.playSongs(list, i) }
+    // Organized data models for YouTube Music shelves
+    val topSongs = remember(app.songs, plays) {
+        app.songs.sortedByDescending { plays[it.id] ?: 0 }
+    }
+    val recentSongs = remember(app.songs) {
+        app.songs.sortedWith(compareByDescending<Song> { it.dateAdded }.thenByDescending { it.id })
+    }
+    val artistGroups = remember(app.songs) {
+        app.songs.groupBy { it.artist }.entries
+            .map { it.key to it.value }
+            .sortedByDescending { it.second.size }
+    }
+    val albumCards = remember(app.songs, plays) {
+        app.songs.groupBy { it.albumId }.map { (id, l) ->
+            val totalPlays = l.sumOf { plays[it.id] ?: 0 }
+            HomeCard("a$id", l.first().album.ifBlank { "Unknown Album" }, "${l.first().artist} · ${l.size} songs", l.first().art, totalPlays >= GOLD_PLAYS) { onOpen(Detail.Album(id)) }
+        }.sortedBy { it.title.lowercase() }
+    }
+    val playlistCards = remember(app.pls.lists, plays) {
+        app.pls.lists.map { pl ->
+            val l = pl.songIds.mapNotNull { app.byId[it] }
+            val totalPlays = l.sumOf { plays[it.id] ?: 0 }
+            HomeCard("p${pl.id}", pl.name, "${l.size} songs", l.firstOrNull()?.art, totalPlays >= GOLD_PLAYS) { onOpen(Detail.PL(pl.id)) }
         }
-        when (chip) {
-            1 -> songCards(app.songs.filter { (plays[it.id] ?: 0) > 0 }.sortedByDescending { plays[it.id] ?: 0 }.take(RECENT_COUNT))
-            2 -> songCards(app.songs.sortedWith(compareByDescending<Song> { it.dateAdded }.thenByDescending { it.id }).take(RECENT_COUNT))
-            3 -> app.songs.groupBy { it.artist }.entries
-                .sortedByDescending { e -> e.value.minOf { it.dateAdded } }.take(RECENT_COUNT)
-                .map { (name, l) -> HomeCard("r$name", name, "${l.size} songs", l.first().art, total(l) >= GOLD_PLAYS) { onOpen(Detail.Artist(name)) } }
-            4 -> app.songs.groupBy { it.albumId }.entries
-                .sortedWith(compareByDescending<Map.Entry<Long, List<Song>>> { e -> e.value.maxOf { it.year } }.thenByDescending { e -> e.value.maxOf { it.dateAdded } })
-                .take(RECENT_COUNT)
-                .map { (id, l) -> HomeCard("a$id", l.first().album.ifBlank { "Unknown album" }, "${l.size} songs", l.first().art, total(l) >= GOLD_PLAYS) { onOpen(Detail.Album(id)) } }
-            else -> {
-                val pls = app.pls.lists.map { pl ->
-                    val l = pl.songIds.mapNotNull { app.byId[it] }
-                    HomeCard("p${pl.id}", pl.name, "${l.size} songs", l.firstOrNull()?.art, total(l) >= GOLD_PLAYS) { onOpen(Detail.PL(pl.id)) }
-                }
-                val albums = app.songs.groupBy { it.albumId }.map { (id, l) ->
-                    HomeCard("a$id", l.first().album.ifBlank { "Unknown album" }, "${l.size} songs", l.first().art, total(l) >= GOLD_PLAYS) { onOpen(Detail.Album(id)) }
-                }.sortedBy { it.title.lowercase() }
-                pls + albums
-            }
+    }
+    val favoriteCards = remember(recentSongs) {
+        recentSongs.take(15).mapIndexed { i, s ->
+            HomeCard("fav_${s.id}", s.title, s.artist, s.art, false) { ps.playSongs(recentSongs, i) }
         }
     }
 
     Column(Modifier.fillMaxSize()) {
-        // App Bar with Quick Actions
+        // YouTube Music Top Brand Header Bar
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Avatar(app, onProfile)
-            Spacer(Modifier.weight(1f))
+            // Brand Logo & Title (YouTube Music style)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(u.text),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Ico(P.Play, if (u.light) Color.White else Color(0xFF101114), 16.dp)
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    "Music",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = u.text,
+                    letterSpacing = (-0.5).sp
+                )
+                Spacer(Modifier.width(6.dp))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(u.accent.copy(alpha = 0.2f))
+                        .padding(horizontal = 5.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        "PREMIUM",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = u.accentText,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+
+            // Quick Top Actions
+            GlassCircleBtn(P.Equalizer, "Equalizer & FX", onEqualizer)
+            Spacer(Modifier.width(6.dp))
             GlassCircleBtn(P.Search, "Search music", onSearch)
-            Spacer(Modifier.width(6.dp))
-            GlassCircleBtn(P.HeartOutline, "Liked songs", onLiked)
-            Spacer(Modifier.width(6.dp))
-            GlassCircleBtn(P.Equalizer, "Equalizer", onEqualizer)
-            Spacer(Modifier.width(6.dp))
-            GlassCircleBtn(P.History, "Listening stats", onHistory)
+            Spacer(Modifier.width(8.dp))
+            Avatar(app, onProfile)
         }
 
-        Text(
-            if (app.prefs.userName.isBlank()) "Welcome to FR Player" else "Hello, ${app.prefs.userName}",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = u.text,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
-        )
-
+        // YouTube Music Horizontal Filter Chips Shelf
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             itemsIndexed(homeChips) { i, n ->
@@ -371,54 +742,136 @@ fun HomeScreen(
                     Chip("App settings", onClick = onSettings)
                 }
             }
-            cards.isEmpty() && loaded -> Message(
-                when {
-                    app.songs.isEmpty() -> "No audio files detected on this device."
-                    chip == 1 -> "No trending tracks yet. Songs played for 30s+ show here."
-                    else -> "No songs match this category."
-                }
-            )
-            else -> LazyVerticalStaggeredGrid(
-                StaggeredGridCells.Fixed(2),
-                Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
-                verticalItemSpacing = 12.dp,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                gridItemsIndexed(cards, key = { _, c -> c.key }) { i, c ->
-                    val h = listOf(220, 165, 185, 210, 165, 195)[i % 6]
-                    HomeTile(c, h)
+            app.songs.isEmpty() && loaded -> Message("No audio files detected on this device.")
+            else -> {
+                // Main YouTube Music Feed: Shelf after shelf
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = 120.dp)
+                ) {
+                    when (chip) {
+                        0 -> {
+                            // "All" - Full canonical YouTube Music feed
+                            // 1. Signature Quick Picks (4-item columns carousel)
+                            YtQuickPicksShelf(app, app.songs)
+
+                            // 2. Listen again / Forgotten favorites (Medium square cards carousel)
+                            YtMediumCardsShelf(
+                                title = "Listen again",
+                                overline = "KEEP LISTENING",
+                                cards = favoriteCards
+                            )
+
+                            // 3. Recommended Albums shelf
+                            YtMediumCardsShelf(
+                                title = "Featured Albums",
+                                overline = "ALBUMS FOR YOU",
+                                cards = albumCards.take(12),
+                                actionText = "See all",
+                                onAction = { onChip(3) }
+                            )
+
+                            // 4. Your Mixes & Playlists
+                            YtMediumCardsShelf(
+                                title = "Mixed for you",
+                                overline = "COMMUNITY & PLAYLISTS",
+                                cards = playlistCards,
+                                actionText = "See all",
+                                onAction = { onChip(4) }
+                            )
+
+                            // 5. Featured Artists (Circular avatars carousel)
+                            YtArtistCircleShelf(
+                                artists = artistGroups.take(12),
+                                onOpen = onOpen
+                            )
+
+                            // 6. Top Charts (Ranked list #1, #2, #3...)
+                            YtRankedChartShelf(
+                                app = app,
+                                topSongs = if (topSongs.any { (plays[it.id] ?: 0) > 0 }) topSongs else app.songs
+                            )
+                        }
+                        1 -> {
+                            // "Quick picks" view
+                            YtQuickPicksShelf(app, app.songs)
+                            YtMediumCardsShelf(
+                                title = "More picks for you",
+                                overline = "RECOMMENDED",
+                                cards = favoriteCards
+                            )
+                        }
+                        2 -> {
+                            // "Trending" view
+                            YtRankedChartShelf(app, if (topSongs.any { (plays[it.id] ?: 0) > 0 }) topSongs else app.songs)
+                            YtMediumCardsShelf(
+                                title = "Trending Mixes",
+                                overline = "HOTTEST",
+                                cards = playlistCards
+                            )
+                        }
+                        3 -> {
+                            // "Albums" view
+                            YtMediumCardsShelf(
+                                title = "All Albums",
+                                overline = "DISCOGRAPHY",
+                                cards = albumCards
+                            )
+                        }
+                        4 -> {
+                            // "Playlists" view
+                            YtMediumCardsShelf(
+                                title = "Your Playlists",
+                                overline = "COLLECTION",
+                                cards = playlistCards
+                            )
+                        }
+                        5 -> {
+                            // "Artists" view
+                            YtArtistCircleShelf(
+                                artists = artistGroups,
+                                onOpen = onOpen
+                            )
+                        }
+                        6 -> {
+                            // "Energize" mood view
+                            val energize = remember(app.songs) {
+                                app.songs.filter { s ->
+                                    s.title.lowercase().contains("dance") ||
+                                    s.title.lowercase().contains("beat") ||
+                                    s.title.lowercase().contains("party") ||
+                                    s.durationMs in 120000..260000
+                                }.ifEmpty { app.songs.shuffled().take(15) }
+                            }
+                            YtQuickPicksShelf(app, energize)
+                            YtMediumCardsShelf(
+                                title = "High Energy Mixes",
+                                overline = "ENERGIZE",
+                                cards = energize.take(8).map { HomeCard("e_${it.id}", it.title, it.artist, it.art, false) { ps.playSongs(energize, energize.indexOf(it)) } }
+                            )
+                        }
+                        7 -> {
+                            // "Relax" mood view
+                            val relax = remember(app.songs) {
+                                app.songs.filter { s ->
+                                    s.title.lowercase().contains("chill") ||
+                                    s.title.lowercase().contains("acoustic") ||
+                                    s.title.lowercase().contains("slow") ||
+                                    s.durationMs > 240000
+                                }.ifEmpty { app.songs.takeLast(15) }
+                            }
+                            YtQuickPicksShelf(app, relax)
+                            YtMediumCardsShelf(
+                                title = "Deep Relaxation",
+                                overline = "RELAX",
+                                cards = relax.take(8).map { HomeCard("r_${it.id}", it.title, it.artist, it.art, false) { ps.playSongs(relax, relax.indexOf(it)) } }
+                            )
+                        }
+                    }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun HomeTile(c: HomeCard, heightDp: Int) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(heightDp.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .themeClickable(onClickLabel = "Open ${c.title}", onClick = c.open)
-    ) {
-        ArtFill(c.art, c.title, Modifier.fillMaxSize())
-        Box(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(96.dp)
-                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(0.75f))))
-        )
-        if (c.gold) {
-            val pill = RoundedCornerShape(50)
-            Text(
-                "Gold Record", fontSize = 11.sp, color = Color.White,
-                modifier = Modifier.padding(10.dp).clip(pill).background(Color.Black.copy(0.40f))
-                    .border(1.dp, Color.White.copy(0.5f), pill).padding(horizontal = 10.dp, vertical = 4.dp)
-            )
-        }
-        Column(Modifier.align(Alignment.BottomStart).padding(12.dp)) {
-            Text(c.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(c.subtitle, fontSize = 11.sp, color = Color.White.copy(0.85f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -428,7 +881,11 @@ private fun Avatar(app: AppState, onClick: () -> Unit) {
     val u = LocalUi.current
     val name = app.prefs.userName
     Box(
-        Modifier.size(48.dp).clip(CircleShape).background(u.accent)
+        Modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .background(u.accent)
+            .border(1.dp, if (u.light) Color.Black.copy(0.12f) else Color.White.copy(0.3f), CircleShape)
             .semantics { contentDescription = "Profile avatar. Opens settings." }
             .themeClickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center
@@ -436,7 +893,7 @@ private fun Avatar(app: AppState, onClick: () -> Unit) {
         if (app.prefs.avatarRev > 0) {
             AsyncImage(app.prefs.avatarFile, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         } else {
-            Text(name.take(1).uppercase().ifBlank { "FR" }, color = u.onAccent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(name.take(1).uppercase().ifBlank { "FR" }, color = u.onAccent, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -486,7 +943,7 @@ fun MyMusicScreen(
         ) {
             GlassCircleBtn(P.ChevronLeft, "Back to Home", onBack)
             Text(
-                "My Music",
+                "Library",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = u.text,

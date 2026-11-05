@@ -47,14 +47,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 val Accents = listOf(
-    "Ocean" to Color(0xFF5DADE2),
-    "Sunset" to Color(0xFFFFA45B),
-    "Forest" to Color(0xFF58D68D),
-    "Berry" to Color(0xFFE58BFF),
-    "Indigo" to Color(0xFF8C9EFF),
-    "Violet" to Color(0xFF9B3DF0),
-    "Ruby" to Color(0xFFFF5252),
-    "Amber" to Color(0xFFFFD54F)
+    "Platinum" to Color(0xFFE5E7EB),        // Crisp platinum silver
+    "Pure White" to Color(0xFFFFFFFF),      // Crisp stark white
+    "Brushed Steel" to Color(0xFFB0B4C3),   // Metallic silver
+    "Titanium" to Color(0xFF888B99),        // Deep titanium gray
+    "Frosted Silver" to Color(0xFFD4D7E2),  // Frosted pearlescent silver
+    "Slate Gray" to Color(0xFF636775),      // Sophisticated slate
+    "Chrome" to Color(0xFFF3F4F8),          // Bright chrome white
+    "Onyx" to Color(0xFF2E3038)             // Luxury deep charcoal
 )
 
 data class ThemeProfile(
@@ -65,11 +65,11 @@ data class ThemeProfile(
 )
 
 val ThemeProfiles = listOf(
-    ThemeProfile(0, "Violet Glass", "Luxury violet glassmorphism", listOf(Color(0xFF7B38B3), Color(0xFF3C2E92), Color(0xFF15143F))),
-    ThemeProfile(1, "AMOLED Stealth", "Pure black energy saver", listOf(Color(0xFF000000), Color(0xFF0D0D12), Color(0xFF161622))),
-    ThemeProfile(2, "Crystal Light", "Clean crisp daytime frost", listOf(Color(0xFFF7F5FC), Color(0xFFEDE7F6), Color(0xFFDCD2F2))),
-    ThemeProfile(3, "Cyber Neon", "Electric dark cyan & navy", listOf(Color(0xFF0B2545), Color(0xFF133C55), Color(0xFF08182B))),
-    ThemeProfile(4, "Sunset Amber", "Warm espresso & copper glow", listOf(Color(0xFF421C0E), Color(0xFF2C1309), Color(0xFF170803)))
+    ThemeProfile(0, "Titanium Slate", "Luxury dark titanium & brushed steel", listOf(Color(0xFF23252C), Color(0xFF16171B), Color(0xFF0C0D0F))),
+    ThemeProfile(1, "AMOLED Obsidian", "Pure black with stark white & gray contrast", listOf(Color(0xFF000000), Color(0xFF0D0D10), Color(0xFF17171C))),
+    ThemeProfile(2, "Pearl White", "Crisp luxury white & brushed aluminum frost", listOf(Color(0xFFFFFFFF), Color(0xFFEEEEF2), Color(0xFFDFE2E8))),
+    ThemeProfile(3, "Frosted Silver", "Sleek monochromatic silver gradient", listOf(Color(0xFF2E313A), Color(0xFF1E2026), Color(0xFF121316))),
+    ThemeProfile(4, "Matte Graphite", "Deep studio charcoal & chalk white accents", listOf(Color(0xFF222226), Color(0xFF161618), Color(0xFF0E0E10)))
 )
 
 @Immutable
@@ -92,24 +92,24 @@ fun uiColors(mode: Int, accent: Color, top: Color? = null, bottom: Color? = null
     val light = mode == 2
     val t = top ?: when (mode) {
         1 -> Color(0xFF000000)
-        2 -> Color(0xFFF7F5FC)
-        3 -> Color(0xFF0B2545)
-        4 -> Color(0xFF421C0E)
-        else -> Color(0xFF7B38B3)
+        2 -> Color(0xFFFAFAFC)
+        3 -> Color(0xFF24262E)
+        4 -> Color(0xFF1E1E22)
+        else -> Color(0xFF16171B)
     }
     val m = mid ?: when (mode) {
-        1 -> Color(0xFF040406)
-        2 -> Color(0xFFECE6F8)
-        3 -> Color(0xFF0E1E38)
-        4 -> Color(0xFF2C1309)
-        else -> Color(0xFF3C2E92)
+        1 -> Color(0xFF060608)
+        2 -> Color(0xFFEFF0F5)
+        3 -> Color(0xFF181A20)
+        4 -> Color(0xFF141416)
+        else -> Color(0xFF101114)
     }
     val b = bottom ?: when (mode) {
-        1 -> Color(0xFF06060A)
-        2 -> Color(0xFFDDD4F2)
-        3 -> Color(0xFF060D1A)
-        4 -> Color(0xFF170803)
-        else -> Color(0xFF15143F)
+        1 -> Color(0xFF000000)
+        2 -> Color(0xFFE2E4EB)
+        3 -> Color(0xFF0F1013)
+        4 -> Color(0xFF0B0B0D)
+        else -> Color(0xFF0A0B0D)
     }
 
     return UiColors(
@@ -117,20 +117,20 @@ fun uiColors(mode: Int, accent: Color, top: Color? = null, bottom: Color? = null
         mid = m,
         bottom = b,
         accent = accent,
-        accentText = if (light) lerp(accent, Color.Black, 0.45f) else lerp(accent, Color.White, 0.30f),
-        onAccent = if (accent.luminance() > 0.55f) Color(0xFF101014) else Color.White,
-        text = if (light) Color(0xFF181428) else Color.White,
-        dim = if (light) Color(0xFF635C7A) else Color(0xFFCBC6E6),
-        glassHi = if (light) Color.Black.copy(0.06f) else Color.White.copy(0.15f),
-        glassLo = if (light) Color.Black.copy(0.02f) else Color.White.copy(0.05f),
-        border = if (light) Color.Black.copy(0.10f) else Color.White.copy(0.18f),
+        accentText = if (light) lerp(accent, Color(0xFF101114), 0.55f) else lerp(accent, Color.White, 0.35f),
+        onAccent = if (accent.luminance() > 0.52f) Color(0xFF101114) else Color.White,
+        text = if (light) Color(0xFF101114) else Color.White,
+        dim = if (light) Color(0xFF5A5E6B) else Color(0xFFA2A6B4),
+        glassHi = if (light) Color(0xFF101114).copy(0.045f) else Color.White.copy(0.12f),
+        glassLo = if (light) Color(0xFF101114).copy(0.015f) else Color.White.copy(0.035f),
+        border = if (light) Color(0xFF101114).copy(0.12f) else Color.White.copy(0.16f),
         light = light
     )
 }
 
 fun uiBrush(u: UiColors): Brush = Brush.verticalGradient(listOf(u.top, u.mid, u.bottom))
 
-val LocalUi = staticCompositionLocalOf { uiColors(0, Accents[5].second) }
+val LocalUi = staticCompositionLocalOf { uiColors(0, Accents[0].second) }
 val LocalArtShape = compositionLocalOf { 0 }
 val LocalMotion = compositionLocalOf { 0 }
 
@@ -176,11 +176,11 @@ fun fmt(ms: Long): String {
 }
 
 object P {
-    const val Play = "M8 5v14l11-7z"
-    const val Pause = "M6 19h4V5H6v14zm8-14v14h4V5h-4z"
-    const val Next = "M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"
-    const val Prev = "M6 6h2v12H6zm3.5 6l8.5 6V6z"
-    const val Shuffle = "M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"
+    const val Play = "M8.5 6.2c0-.95 1.05-1.52 1.84-1.01l10.2 6.54c.75.48.75 1.57 0 2.05l-10.2 6.54c-.79.51-1.84-.06-1.84-1.01V6.2z"
+    const val Pause = "M6 5.5A1.5 1.5 0 0 1 7.5 4h1A1.5 1.5 0 0 1 10 5.5v13A1.5 1.5 0 0 1 8.5 20h-1A1.5 1.5 0 0 1 6 18.5v-13zm8 0A1.5 1.5 0 0 1 15.5 4h1a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-1a1.5 1.5 0 0 1-1.5-1.5v-13z"
+    const val Next = "M6.5 18a1 1 0 0 1-1.54-.84V6.84A1 1 0 0 1 6.5 6l9.2 5.52a1 1 0 0 1 0 1.68L6.5 18zM17.5 6a1 1 0 0 1 1 1v10a1 1 0 1 1-2 0V7a1 1 0 0 1 1-1z"
+    const val Prev = "M17.5 6a1 1 0 0 1 1.54.84v10.32a1 1 0 0 1-1.54.84L8.3 12.48a1 1 0 0 1 0-1.68L17.5 6zM6.5 6a1 1 0 0 1 1 1v10a1 1 0 1 1-2 0V7a1 1 0 0 1 1-1z"
+    const val Shuffle = "M14.83 5.41a1 1 0 0 1 1.41 0l3.05 3.05a1 1 0 0 1 0 1.42l-3.05 3.05a1 1 0 0 1-1.41-1.42L16.09 10h-2.17c-.82 0-1.58.38-2.07 1.03l-3.4 4.54A4.57 4.57 0 0 1 4.8 17.5H4a1 1 0 0 1 0-2h.8c.82 0 1.58-.38 2.07-1.03l3.4-4.54A4.57 4.57 0 0 1 13.92 8h2.17l-1.26-1.26a1 1 0 0 1 0-1.33zM4 6.5h.8c1.39 0 2.68.64 3.52 1.74l.9.89-1.42 1.42-.64-.86A2.57 2.57 0 0 0 4.8 8.5H4a1 1 0 0 1 0-2zm12.09 9l-1.26-1.26a1 1 0 0 1 1.41-1.41l3.05 3.05a1 1 0 0 1 0 1.42l-3.05 3.05a1 1 0 0 1-1.41-1.42l1.26-1.26h-2.17a4.57 4.57 0 0 1-3.65-1.83l.9-.89 1.42 1.42c.49.65 1.25 1.03 2.07 1.03h2.17z"
     const val Repeat = "M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"
     const val RepeatOne = "M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z"
     const val Heart = "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
@@ -285,7 +285,10 @@ fun Art(
 ) {
     val ctx = LocalContext.current
     val sh = shape ?: if (plain) RoundedCornerShape(0.dp) else RoundedCornerShape(radius)
-    val hue = seed.hashCode().mod(360).toFloat()
+    val u = LocalUi.current
+    val shade = (seed.hashCode() and 0x7FFFFFFF) % 12
+    val darkShade = Color(0xFF181A20 + shade * 0x010101)
+    val lightShade = Color(0xFF282B34 + shade * 0x010101)
     val req = remember(model) { ImageRequest.Builder(ctx).data(model).crossfade(true).build() }
     Box(
         modifier
@@ -293,15 +296,14 @@ fun Art(
             .clip(sh)
             .background(
                 Brush.linearGradient(
-                    listOf(
-                        Color.hsv(hue, 0.45f, 0.42f),
-                        Color.hsv((hue + 40f) % 360f, 0.5f, 0.22f)
-                    )
+                    if (u.light) listOf(Color(0xFFE8EAF0), Color(0xFFD6D9E2))
+                    else listOf(lightShade, darkShade)
                 )
-            ),
+            )
+            .border(0.5.dp, if (u.light) Color(0xFF101114).copy(0.08f) else Color.White.copy(0.12f), sh),
         contentAlignment = Alignment.Center
     ) {
-        Ico(P.Note, Color.White.copy(0.55f), size * 0.45f)
+        Ico(P.Note, if (u.light) Color(0xFF4A4E5A) else Color.White.copy(0.55f), size * 0.42f)
         AsyncImage(req, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
     }
 }
@@ -309,20 +311,21 @@ fun Art(
 @Composable
 fun ArtFill(model: Any?, seed: String, modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
-    val hue = seed.hashCode().mod(360).toFloat()
+    val u = LocalUi.current
+    val shade = (seed.hashCode() and 0x7FFFFFFF) % 12
+    val darkShade = Color(0xFF181A20 + shade * 0x010101)
+    val lightShade = Color(0xFF282B34 + shade * 0x010101)
     val req = remember(model) { ImageRequest.Builder(ctx).data(model).crossfade(true).build() }
     Box(
         modifier.background(
             Brush.linearGradient(
-                listOf(
-                    Color.hsv(hue, 0.45f, 0.42f),
-                    Color.hsv((hue + 40f) % 360f, 0.5f, 0.22f)
-                )
+                if (u.light) listOf(Color(0xFFE8EAF0), Color(0xFFD6D9E2))
+                else listOf(lightShade, darkShade)
             )
         ),
         contentAlignment = Alignment.Center
     ) {
-        Ico(P.Note, Color.White.copy(0.5f), 40.dp)
+        Ico(P.Note, if (u.light) Color(0xFF4A4E5A) else Color.White.copy(0.5f), 40.dp)
         AsyncImage(req, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
     }
 }

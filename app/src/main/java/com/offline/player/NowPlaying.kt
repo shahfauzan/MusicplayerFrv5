@@ -7,9 +7,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -417,14 +419,61 @@ fun NowPlaying(
 
             Spacer(Modifier.height(14.dp))
 
-            // Action Quick Chips (Queue, Equalizer, Beat Shake, Lyrics, Sleep, Speed)
+            // YouTube Music Signature Bottom 3-Segment Tab Bar (UP NEXT | LYRICS | AUDIO FX)
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp, bottom = 4.dp)
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(Brush.verticalGradient(listOf(u.glassHi, u.glassLo)))
+                    .border(1.dp, u.border, RoundedCornerShape(30.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // UP NEXT
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .themeClickable(onClick = onQueue),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("UP NEXT", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = u.text, letterSpacing = 0.8.sp)
+                }
+                // LYRICS
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .themeClickable(onClick = onLyrics),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("LYRICS", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = u.text, letterSpacing = 0.8.sp)
+                }
+                // AUDIO FX / EQUALIZER
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .themeClickable(onClick = onEqualizer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("AUDIO FX", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = u.text, letterSpacing = 0.8.sp)
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // Action Quick Chips (Beat Shake, Sleep timer, Playback Speed)
             FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Chip("Queue (${ps.queue.size})", onClick = onQueue)
-                Chip("Equalizer", onClick = onEqualizer)
                 val shakeChipLabel = when (app.prefs.beatShakeMode) {
                     0 -> "Shake: Off"
                     1 -> "🍃 Shake: Subtle"
@@ -432,7 +481,6 @@ fun NowPlaying(
                     else -> "🔥 Shake: Party"
                 }
                 Chip(shakeChipLabel, onClick = { showBeatSyncSheet = true })
-                Chip("Lyrics", onClick = onLyrics)
                 Chip(sleepLabel, onClick = onSleep)
                 Chip("${speeds[app.prefs.speed]}x") {
                     app.prefs.setSpeed((app.prefs.speed + 1) % speeds.size)

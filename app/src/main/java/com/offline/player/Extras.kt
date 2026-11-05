@@ -88,7 +88,7 @@ fun EqualizerSheet(app: AppState, onDismiss: () -> Unit) {
                     .widthIn(max = 560.dp)
                     .fillMaxHeight(0.92f)
                     .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                    .background(if (u.light) Color(0xFFF7F5FC) else Color(0xFF161522))
+                    .background(if (u.light) Color(0xFFFAFAFC) else Color(0xFF141518))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
@@ -681,7 +681,7 @@ fun LyricsSheet(app: AppState, onDismiss: () -> Unit) {
                     .fillMaxWidth(0.92f)
                     .fillMaxHeight(0.82f)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(if (u.light) Color.White else Color(0xFF1A192A))
+                    .background(if (u.light) Color.White else Color(0xFF16171B))
                     .padding(20.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
@@ -783,7 +783,7 @@ fun TagEditorDialog(app: AppState, song: Song, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = if (u.light) Color.White else Color(0xFF1E1E2E),
+        containerColor = if (u.light) Color.White else Color(0xFF18191E),
         title = { Text("Edit Song Information", color = u.text, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -853,7 +853,7 @@ fun VaultPinDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = if (u.light) Color.White else Color(0xFF1E1E2E),
+        containerColor = if (u.light) Color.White else Color(0xFF18191E),
         title = { Text("Private Vault PIN", color = u.text, fontWeight = FontWeight.Bold) },
         text = {
             Column {

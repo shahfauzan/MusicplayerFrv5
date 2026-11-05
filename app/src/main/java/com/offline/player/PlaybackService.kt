@@ -12,6 +12,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionResult
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -28,13 +29,13 @@ class PlaybackService : MediaSessionService() {
             private set
 
         fun getOrCreateSilenceWav(context: Context): Uri {
-            val file = File(context.cacheDir, "silence_loop.wav")
-            if (!file.exists() || file.length() < 44) {
+            val file = File(context.cacheDir, "silence_buffer.wav")
+            if (!file.exists() || file.length() < 100_000) {
                 try {
-                    val sampleRate = 44100
+                    val sampleRate = 22050
                     val numChannels = 1
                     val bitsPerSample = 16
-                    val durationSec = 1
+                    val durationSec = 30 // 30 seconds smooth loop
                     val dataSize = sampleRate * numChannels * (bitsPerSample / 8) * durationSec
                     val totalSize = 36 + dataSize
                     val byteRate = sampleRate * numChannels * (bitsPerSample / 8)
@@ -56,7 +57,7 @@ class PlaybackService : MediaSessionService() {
                         bb.put("data".toByteArray(Charsets.US_ASCII))
                         bb.putInt(dataSize)
                         out.write(bb.array())
-                        val zeroes = ByteArray(4096)
+                        val zeroes = ByteArray(8192)
                         var written = 0
                         while (written < dataSize) {
                             val toWrite = minOf(zeroes.size, dataSize - written)
@@ -65,7 +66,7 @@ class PlaybackService : MediaSessionService() {
                         }
                     }
                 } catch (e: Exception) {
-                    // fallback
+                    // ignore
                 }
             }
             return Uri.fromFile(file)
@@ -74,6 +75,7 @@ class PlaybackService : MediaSessionService() {
         fun startOnlineStream(context: Context, title: String, artist: String, artworkUri: Uri?) {
             val player = activePlayer ?: return
             isOnlineActive = true
+
             val silenceUri = getOrCreateSilenceWav(context)
             val metadata = MediaMetadata.Builder()
                 .setTitle(title)
@@ -82,16 +84,20 @@ class PlaybackService : MediaSessionService() {
                 .setDisplayTitle(title)
                 .setIsPlayable(true)
                 .build()
+
             val item = MediaItem.Builder()
                 .setMediaId("online_stream")
                 .setUri(silenceUri)
+                .setMimeType("audio/wav")
                 .setMediaMetadata(metadata)
                 .build()
-            player.repeatMode = Player.REPEAT_MODE_ALL
+
             player.volume = 0f
+            player.repeatMode = Player.REPEAT_MODE_ALL
             player.setMediaItem(item)
             player.prepare()
             player.play()
+
             FrMusicWidget.updateWidget(context, title, artist, true)
         }
 
@@ -121,12 +127,6 @@ class PlaybackService : MediaSessionService() {
         activeSessionId = player.audioSessionId
 
         player.addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (isOnlineActive) {
-                    OnlineStreamManager.onRemotePlayPauseChanged(isPlaying)
-                }
-            }
-
             override fun onEvents(pl: Player, events: Player.Events) {
                 activeSessionId = player.audioSessionId
                 // Notify home-screen widget on track transitions or playback changes
@@ -151,7 +151,27 @@ class PlaybackService : MediaSessionService() {
             Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        session = MediaSession.Builder(this, player).setSessionActivity(open).build()
+
+        session = MediaSession.Builder(this, player)
+            .setSessionActivity(open)
+            .setCallback(object : MediaSession.Callback {
+                override fun onPlayerCommandRequest(
+                    session: MediaSession,
+                    controller: MediaSession.ControllerInfo,
+                    playerCommand: Int
+                ): Int {
+                    if (isOnlineActive && playerCommand == Player.COMMAND_PLAY_PAUSE) {
+                        if (OnlineStreamManager.isPlaying) {
+                            OnlineStreamManager.pause()
+                        } else {
+                            OnlineStreamManager.resume()
+                        }
+                        return SessionResult.RESULT_SUCCESS
+                    }
+                    return super.onPlayerCommandRequest(session, controller, playerCommand)
+                }
+            })
+            .build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session

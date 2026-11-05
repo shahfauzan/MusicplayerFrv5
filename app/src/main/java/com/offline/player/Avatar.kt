@@ -106,7 +106,7 @@ fun AvatarEditor(
         BoxWithConstraints(
             Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0C0B12))
+                .background(Color(0xFF0A0B0E))
                 .statusBarsPadding()
                 .navigationBarsPadding()
         ) {

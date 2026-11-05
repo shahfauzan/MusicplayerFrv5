@@ -24,8 +24,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -34,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
@@ -325,9 +328,9 @@ fun PlayerApp() {
     }
 
     val scheme = if (ui.light) {
-        lightColorScheme(primary = ui.accent, onPrimary = ui.onAccent, surface = Color.White, onSurface = ui.text)
+        lightColorScheme(primary = ui.accent, onPrimary = ui.onAccent, surface = Color(0xFFFAFAFC), onSurface = ui.text)
     } else {
-        darkColorScheme(primary = ui.accent, onPrimary = ui.onAccent, surface = Color(0xFF161522), onSurface = ui.text)
+        darkColorScheme(primary = ui.accent, onPrimary = ui.onAccent, surface = Color(0xFF141518), onSurface = ui.text)
     }
 
     val sleepLabel = when {
@@ -378,7 +381,7 @@ fun PlayerApp() {
                                 .fillMaxSize()
                                 .then(
                                     if (tab == 3 && d == null) Modifier
-                                    else Modifier.size(1.dp).alpha(0.0001f).offset(x = 10000.dp)
+                                    else Modifier.size(1.dp).alpha(0.001f)
                                 )
                         ) {
                             OnlineScreen(app)
@@ -505,7 +508,7 @@ fun PlayerApp() {
                     AlertDialog(
                         onDismissRequest = { showSleep = false },
                         confirmButton = {},
-                        containerColor = if (ui.light) Color.White else Color(0xFF1E1E2A),
+                        containerColor = if (ui.light) Color.White else Color(0xFF18191E),
                         title = { Text("Sleep Timer", color = ui.text, fontWeight = FontWeight.Bold) },
                         text = {
                             Column {
@@ -556,23 +559,32 @@ fun FloatNav(tab: Int, onTab: (Int) -> Unit) {
     val u = LocalUi.current
     val items = listOf(
         Triple("Home", P.Home, 0),
-        Triple("My Music", P.Note, 1),
+        Triple("Library", P.Note, 1),
         Triple("Online", GLOBE, 3),
         Triple("Settings", P.Gear, 2)
     )
 
     Box(Modifier.fillMaxWidth().padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
         Row(
-            Modifier.glass(34.dp).padding(6.dp),
+            Modifier
+                .shadow(16.dp, RoundedCornerShape(36.dp), spotColor = Color.Black.copy(alpha = 0.5f))
+                .glass(36.dp)
+                .border(1.dp, if (u.light) Color(0xFF101114).copy(0.12f) else Color.White.copy(0.20f), RoundedCornerShape(36.dp))
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items.forEach { (label, icon, i) ->
                 val sel = tab == i
                 Box(
                     Modifier
-                        .size(52.dp)
+                        .size(50.dp)
                         .clip(CircleShape)
-                        .then(if (sel) Modifier.background(u.accent) else Modifier)
+                        .then(
+                            if (sel) Modifier
+                                .background(u.accent)
+                                .border(1.dp, if (u.light) Color.Black.copy(0.15f) else Color.White.copy(0.35f), CircleShape)
+                            else Modifier
+                        )
                         .semantics { contentDescription = label }
                         .selectable(selected = sel, role = Role.Tab, onClick = { onTab(i) }),
                     contentAlignment = Alignment.Center

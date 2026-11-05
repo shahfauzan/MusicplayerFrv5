@@ -18,11 +18,11 @@ class FrPlayerUnitTest {
     @Test
     fun testThemeProfiles() {
         assertEquals(5, ThemeProfiles.size)
-        assertEquals("Violet Glass", ThemeProfiles[0].name)
-        assertEquals("AMOLED Stealth", ThemeProfiles[1].name)
-        assertEquals("Crystal Light", ThemeProfiles[2].name)
-        assertEquals("Cyber Neon", ThemeProfiles[3].name)
-        assertEquals("Sunset Amber", ThemeProfiles[4].name)
+        assertEquals("Titanium Slate", ThemeProfiles[0].name)
+        assertEquals("AMOLED Obsidian", ThemeProfiles[1].name)
+        assertEquals("Pearl White", ThemeProfiles[2].name)
+        assertEquals("Frosted Silver", ThemeProfiles[3].name)
+        assertEquals("Matte Graphite", ThemeProfiles[4].name)
     }
 
     @Test

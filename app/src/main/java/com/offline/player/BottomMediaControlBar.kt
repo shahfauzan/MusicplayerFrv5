@@ -82,6 +82,7 @@ fun BottomMediaControlBar(
 
     val songId = item.mediaId.toLongOrNull()
     val isFav = songId?.let { app.prefs.favs.contains(it) } ?: false
+    val isAudioPlaying = if (isOnline) OnlineStreamManager.isPlaying else ps.playing
 
     // ── Scrubbing / Seeking State ──
     var isScrubbing by remember { mutableStateOf(false) }
@@ -97,8 +98,8 @@ fun BottomMediaControlBar(
 
     // Subtle vinyl rotation effect when playing
     val rotationAnim = remember { Animatable(0f) }
-    LaunchedEffect(ps.playing) {
-        if (ps.playing) {
+    LaunchedEffect(isAudioPlaying) {
+        if (isAudioPlaying) {
             rotationAnim.animateTo(
                 targetValue = rotationAnim.value + 360f,
                 animationSpec = infiniteRepeatable(
@@ -113,9 +114,9 @@ fun BottomMediaControlBar(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 4.dp)
-            .shadow(12.dp, RoundedCornerShape(20.dp), spotColor = u.accent.copy(alpha = 0.25f))
-            .glass(20.dp)
-            .border(1.dp, u.accent.copy(alpha = 0.22f), RoundedCornerShape(20.dp))
+            .shadow(16.dp, RoundedCornerShape(22.dp), spotColor = Color.Black.copy(alpha = 0.5f))
+            .glass(22.dp)
+            .border(1.dp, if (u.light) Color(0xFF101114).copy(alpha = 0.12f) else Color.White.copy(alpha = 0.22f), RoundedCornerShape(22.dp))
             .testTag("bottom_media_control_bar")
     ) {
         // ── Top Interactive Seek Bar ──
@@ -305,7 +306,7 @@ fun BottomMediaControlBar(
                 if (songId != null && !isOnline) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(48.dp)
                             .clip(CircleShape)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
@@ -329,7 +330,7 @@ fun BottomMediaControlBar(
                 // Previous Track / Rewind 10s button
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -357,16 +358,17 @@ fun BottomMediaControlBar(
                         .size(48.dp)
                         .clip(CircleShape)
                         .background(u.accent)
+                        .border(1.dp, if (u.light) Color.Black.copy(0.15f) else Color.White.copy(0.35f), CircleShape)
                         .clickable(
-                            onClickLabel = if (ps.playing) "Pause" else "Play",
+                            onClickLabel = if (isAudioPlaying) "Pause" else "Play",
                             onClick = { ps.toggle() }
                         )
                         .testTag("bottom_media_play_pause_button")
-                        .semantics { contentDescription = if (ps.playing) "Pause" else "Play" },
+                        .semantics { contentDescription = if (isAudioPlaying) "Pause" else "Play" },
                     contentAlignment = Alignment.Center
                 ) {
                     Ico(
-                        path = if (ps.playing) P.Pause else P.Play,
+                        path = if (isAudioPlaying) P.Pause else P.Play,
                         tint = u.onAccent,
                         sz = 26.dp
                     )
@@ -375,7 +377,7 @@ fun BottomMediaControlBar(
                 // Next Track / Fast-Forward 10s button
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },

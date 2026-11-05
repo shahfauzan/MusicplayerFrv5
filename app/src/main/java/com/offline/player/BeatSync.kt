@@ -214,7 +214,7 @@ fun BeatSyncSheet(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = if (u.light) Color.White else Color(0xFF1E1E2A),
+        containerColor = if (u.light) Color.White else Color(0xFF18191E),
         titleContentColor = u.text,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
