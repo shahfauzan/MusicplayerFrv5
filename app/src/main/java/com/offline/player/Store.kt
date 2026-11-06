@@ -34,7 +34,7 @@ class Prefs(ctx: Context) {
     var seekStyle by mutableIntStateOf(p.getInt("seekstyle", 0)); private set // 0 Waveform, 1 Slider
     var crossfadeSec by mutableIntStateOf(p.getInt("crossfade", 0)); private set // 0 (off), 2, 4, 6, 8
     var visualizerOn by mutableStateOf(p.getBoolean("vis_on", true)); private set
-    var beatShakeMode by mutableIntStateOf(p.getInt("beat_shake", 2)); private set // 0 Off, 1 Subtle, 2 Dynamic, 3 Wild/Party
+    var beatShakeMode by mutableIntStateOf(p.getInt("beat_shake", 0)); private set // 0 Off, 1 Subtle, 2 Dynamic, 3 Wild/Party
     var beatShakeHaptics by mutableStateOf(p.getBoolean("beat_haptics", false)); private set
     var userName by mutableStateOf(p.getString("username", "") ?: ""); private set
     var lastOnlineUrl by mutableStateOf(p.getString("online_url", "") ?: ""); private set
@@ -90,8 +90,8 @@ class Prefs(ctx: Context) {
             .remove("dynamic").remove("motion").remove("artshape").remove("seekstyle").remove("crossfade")
             .remove("beat_shake").remove("beat_haptics").apply()
         clearWallpaper()
-        mode = 0; accent = 5; sort = 0; speed = 2; blur = true; dynamic = true; motion = systemMotion()
-        artShape = 2; seekStyle = 0; crossfadeSec = 0; visualizerOn = true; beatShakeMode = 2; beatShakeHaptics = false
+        mode = 0; accent = 0; sort = 0; speed = 2; blur = true; dynamic = true; motion = systemMotion()
+        artShape = 2; seekStyle = 0; crossfadeSec = 0; visualizerOn = true; beatShakeMode = 0; beatShakeHaptics = false
     }
 
     fun saveSession(ids: String, idx: Int, pos: Long) {

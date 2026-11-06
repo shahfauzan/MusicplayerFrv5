@@ -108,11 +108,13 @@ fun PlayerApp() {
     var sleepAfterCurrentSong by remember { mutableStateOf(false) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var restored by remember { mutableStateOf(false) }
+    var activeVideo by remember { mutableStateOf<VideoItem?>(null) }
 
     // ── Permissions & Library Loading ──
     val perms = if (Build.VERSION.SDK_INT >= 33) {
         arrayOf(
             Manifest.permission.READ_MEDIA_AUDIO,
+            Manifest.permission.READ_MEDIA_VIDEO,
             Manifest.permission.POST_NOTIFICATIONS,
             Manifest.permission.RECORD_AUDIO
         )
@@ -340,6 +342,7 @@ fun PlayerApp() {
     }
 
     // ── Back Handlers ──
+    BackHandler(activeVideo != null) { activeVideo = null }
     BackHandler(showEqualizer) { showEqualizer = false }
     BackHandler(showLyrics) { showLyrics = false }
     BackHandler(showHistory) { showHistory = false }
@@ -401,7 +404,7 @@ fun PlayerApp() {
                                     onSettings = openAppSettings,
                                     onOpen = { detail = it },
                                     onSearch = { tab = 1; searchOn = true; musicChip = 0 },
-                                    onLiked = { tab = 1; musicChip = 6 },
+                                    onLiked = { tab = 1; musicChip = 7 },
                                     onHistory = { showHistory = true },
                                     onEqualizer = { showEqualizer = true },
                                     onProfile = { tab = 2 }
@@ -420,8 +423,15 @@ fun PlayerApp() {
                                     onRequest = { launcher.launch(perms) },
                                     onSettings = openAppSettings,
                                     onBack = { tab = 0 },
-                                    onLiked = { musicChip = if (musicChip == 6) 0 else 6 },
-                                    onOpen = { detail = it }
+                                    onLiked = { musicChip = if (musicChip == 7) 0 else 7 },
+                                    onOpen = { detail = it },
+                                    onPlayVideo = { video, list ->
+                                        activeVideo = video
+                                        val c = ps.controller ?: return@MyMusicScreen
+                                        c.setMediaItems(list.map { it.toMediaItem() }, list.indexOf(video).coerceAtLeast(0), 0L)
+                                        c.prepare()
+                                        c.play()
+                                    }
                                 )
                                 else -> SettingsScreen(
                                     app = app,
@@ -437,6 +447,21 @@ fun PlayerApp() {
                         if (PlaybackService.isOnlineActive) {
                             tab = 3
                             detail = null
+                        } else if (ps.current?.mediaId?.startsWith("video_") == true) {
+                            if (activeVideo != null) {
+                                // already open
+                            } else {
+                                val rawId = ps.current?.mediaId?.removePrefix("video_")?.toLongOrNull()
+                                if (rawId != null) {
+                                    scope.launch(Dispatchers.IO) {
+                                        val vids = VideoManager.loadVideos(ctx)
+                                        val found = vids.find { it.id == rawId }
+                                        if (found != null) {
+                                            withContext(Dispatchers.Main) { activeVideo = found }
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             showNow = true
                         }
@@ -498,6 +523,16 @@ fun PlayerApp() {
                 // Tag Editor Dialog
                 editingSong?.let { song ->
                     TagEditorDialog(app, song) { editingSong = null }
+                }
+
+                // Video Player Overlay with background playback support
+                activeVideo?.let { vid ->
+                    VideoPlayerScreen(
+                        app = app,
+                        video = vid,
+                        onClose = { activeVideo = null },
+                        onEqualizer = { showEqualizer = true }
+                    )
                 }
 
                 // Add to Playlist Dialog

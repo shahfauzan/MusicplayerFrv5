@@ -16,6 +16,11 @@ import androidx.media3.session.SessionResult
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class PlaybackService : MediaSessionService() {
     private var session: MediaSession? = null
@@ -126,22 +131,44 @@ class PlaybackService : MediaSessionService() {
         activePlayer = player
         activeSessionId = player.audioSessionId
 
+        var tickerJob: kotlinx.coroutines.Job? = null
+        val serviceScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
+
+        fun notifyWidgets() {
+            val title = player.currentMediaItem?.mediaMetadata?.title?.toString() ?: "FR Music Player"
+            val artist = player.currentMediaItem?.mediaMetadata?.artist?.toString() ?: "No song playing"
+            val artUri = player.currentMediaItem?.mediaMetadata?.artworkUri
+            val isPlaying = player.isPlaying
+            val pos = player.currentPosition
+            val dur = player.duration.coerceAtLeast(0L)
+            WidgetHelper.updateAll(this@PlaybackService, title, artist, artUri, isPlaying, pos, dur)
+        }
+
         player.addListener(object : Player.Listener {
             override fun onEvents(pl: Player, events: Player.Events) {
                 activeSessionId = player.audioSessionId
-                // Notify home-screen widget on track transitions or playback changes
                 if (events.containsAny(
                         Player.EVENT_MEDIA_ITEM_TRANSITION,
                         Player.EVENT_IS_PLAYING_CHANGED,
                         Player.EVENT_PLAYBACK_STATE_CHANGED
                     )
                 ) {
-                    FrMusicWidget.updateWidget(
-                        this@PlaybackService,
-                        title = player.currentMediaItem?.mediaMetadata?.title?.toString() ?: "FR Music Player",
-                        artist = player.currentMediaItem?.mediaMetadata?.artist?.toString() ?: "No song playing",
-                        isPlaying = player.isPlaying
-                    )
+                    notifyWidgets()
+                    if (player.isPlaying) {
+                        if (tickerJob == null || tickerJob?.isActive != true) {
+                            tickerJob = serviceScope.launch {
+                                while (player.isPlaying) {
+                                    kotlinx.coroutines.delay(1000)
+                                    if (player.isPlaying) {
+                                        notifyWidgets()
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        tickerJob?.cancel()
+                        tickerJob = null
+                    }
                 }
             }
         })

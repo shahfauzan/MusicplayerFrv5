@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_pill_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="10dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:background="@drawable/widget_pill_bg">
+
+    <ImageView
+        android:id="@+id/widget_pill_art"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:scaleType="centerCrop"
+        android:src="@mipmap/ic_launcher"
+        android:contentDescription="Artwork" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_pill_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FR Music Player"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/widget_pill_seconds"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00 / 00:00"
+                android:textColor="#C0C2CE"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:maxLines="1" />
+
+            <ProgressBar
+                android:id="@+id/widget_pill_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="0dp"
+                android:layout_height="3dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="4dp"
+                android:max="1000"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_progress_drawable" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/widget_pill_prev"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_media_previous"
+        android:contentDescription="Previous" />
+
+    <ImageButton
+        android:id="@+id/widget_pill_play"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        android:background="@drawable/widget_play_btn_bg"
+        android:src="@android:drawable/ic_media_play"
+        android:contentDescription="Play/Pause" />
+
+    <ImageButton
+        android:id="@+id/widget_pill_next"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_media_next"
+        android:contentDescription="Next" />
+</LinearLayout>

@@ -68,7 +68,7 @@ fun EqualizerSheet(app: AppState, onDismiss: () -> Unit) {
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Box(
             Modifier
@@ -79,14 +79,15 @@ fun EqualizerSheet(app: AppState, onDismiss: () -> Unit) {
                     indication = null,
                     onClick = onDismiss
                 )
-                .systemBarsPadding(),
+                .statusBarsPadding()
+                .navigationBarsPadding(),
             contentAlignment = Alignment.BottomCenter
         ) {
             Column(
                 Modifier
                     .fillMaxWidth()
                     .widthIn(max = 560.dp)
-                    .fillMaxHeight(0.92f)
+                    .fillMaxHeight(0.88f)
                     .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     .background(if (u.light) Color(0xFFFAFAFC) else Color(0xFF141518))
                     .clickable(

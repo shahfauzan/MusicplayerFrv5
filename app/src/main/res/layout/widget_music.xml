@@ -3,72 +3,103 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
+    android:orientation="vertical"
     android:padding="12dp"
-    android:background="@drawable/widget_background">
+    android:background="@drawable/widget_card_bg">
 
-    <ImageView
-        android:id="@+id/widget_art"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@drawable/ic_launcher_foreground"
-        android:scaleType="centerCrop"
-        android:contentDescription="@string/app_name" />
-
+    <!-- Top Row: Thumbnail + Info + Controls -->
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="8dp"
-        android:orientation="vertical">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/widget_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="FR Music Player"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
+        <ImageView
+            android:id="@+id/widget_art"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="Now Playing Artwork" />
 
-        <TextView
-            android:id="@+id/widget_artist"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="No song playing"
-            android:textColor="#B0B0C8"
-            android:textSize="12sp"
-            android:maxLines="1"
-            android:ellipsize="end" />
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="FR Music Player"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/widget_artist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Select a song or video"
+                android:textColor="#A0A2AE"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/widget_time_seconds"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="00:00 / 00:00"
+                android:textColor="#D0D2DE"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/widget_prev"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_previous"
+            android:contentDescription="Previous" />
+
+        <ImageButton
+            android:id="@+id/widget_play"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/widget_play_btn_bg"
+            android:src="@android:drawable/ic_media_play"
+            android:contentDescription="Play or Pause" />
+
+        <ImageButton
+            android:id="@+id/widget_next"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_next"
+            android:contentDescription="Next" />
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/widget_prev"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/ic_media_previous"
-        android:contentDescription="Previous track" />
-
-    <ImageButton
-        android:id="@+id/widget_play"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginEnd="4dp"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/ic_media_play"
-        android:contentDescription="Play or pause" />
-
-    <ImageButton
-        android:id="@+id/widget_next"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/ic_media_next"
-        android:contentDescription="Next track" />
+    <!-- Bottom: Progress Bar -->
+    <ProgressBar
+        android:id="@+id/widget_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginTop="8dp"
+        android:max="1000"
+        android:progress="0"
+        android:progressDrawable="@drawable/widget_progress_drawable" />
 </LinearLayout>

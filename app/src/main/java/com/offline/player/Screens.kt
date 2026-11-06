@@ -900,7 +900,7 @@ private fun Avatar(app: AppState, onClick: () -> Unit) {
 
 // ───────────────────────── My Music Screen ─────────────────────────
 
-private val musicChips = listOf("All", "Albums", "Artists", "Playlists", "Folders", "Downloads", "Liked", "Vault")
+private val musicChips = listOf("All", "Albums", "Artists", "Playlists", "Folders", "Videos", "Downloads", "Liked", "Vault")
 
 class AlbumItem(val id: Long, val name: String, val artist: String, val songs: List<Song>)
 
@@ -920,7 +920,8 @@ fun MyMusicScreen(
     onSettings: () -> Unit,
     onBack: () -> Unit,
     onLiked: () -> Unit,
-    onOpen: (Detail) -> Unit
+    onOpen: (Detail) -> Unit,
+    onPlayVideo: (VideoItem, List<VideoItem>) -> Unit = { _, _ -> }
 ) {
     val u = LocalUi.current
     val ps = app.ps
@@ -929,12 +930,12 @@ fun MyMusicScreen(
 
     val list = remember(results, chip, favs) {
         when (chip) {
-            5 -> results.filter { it.inDownloads }
-            6 -> results.filter { it.id in favs }
+            6 -> results.filter { it.inDownloads }
+            7 -> results.filter { it.id in favs }
             else -> results
         }
     }
-    val liked = chip == 6
+    val liked = chip == 7
 
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -965,14 +966,14 @@ fun MyMusicScreen(
         ) {
             itemsIndexed(musicChips) { i, n ->
                 Chip(n, chip == i) {
-                    if (i == 7) {
+                    if (i == 8) {
                         showVaultAuth = true
                     } else {
                         onChip(i)
                     }
                 }
             }
-            if (chip == 0 || chip == 5 || chip == 6) item {
+            if (chip == 0 || chip == 6 || chip == 7) item {
                 var sortOpen by remember { mutableStateOf(false) }
                 Box {
                     Chip("Sort: ${sorts[app.prefs.sort]}") { sortOpen = true }
@@ -992,7 +993,7 @@ fun MyMusicScreen(
         }
 
         when {
-            !granted -> Message("Allow music permission to find your songs.") {
+            !granted -> Message("Allow music & video permission to find your files.") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Chip("Allow access", true, onRequest)
                     Chip("App settings", onClick = onSettings)
@@ -1027,6 +1028,7 @@ fun MyMusicScreen(
                     }
                 }
             }
+            chip == 5 -> VideoScreen(app = app, onPlayVideo = onPlayVideo, onRequestPermission = onRequest)
             chip == 1 -> {
                 val albums = remember(results) {
                     results.groupBy { it.albumId }.map { (id, l) ->
@@ -1055,8 +1057,8 @@ fun MyMusicScreen(
                     when {
                         query.isNotBlank() -> Message("No results for “$query”.")
                         app.songs.isEmpty() -> Message("No songs found on this device.")
-                        chip == 5 -> Message("No audio files in your Downloads folder.")
-                        chip == 6 -> Message("No liked songs yet. Tap the heart icon on any song.")
+                        chip == 6 -> Message("No audio files in your Downloads folder.")
+                        chip == 7 -> Message("No liked songs yet. Tap the heart icon on any song.")
                     }
                 }
                 LazyColumn(Modifier.fillMaxSize()) {
